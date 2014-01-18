@@ -1,0 +1,459 @@
+# The MIT License (MIT)
+# 
+# Copyright (c) 2014 Jussi Jousimo, jvj@iki.fi
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#   
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+library(INLA)
+setOldClass("inla.mesh")
+setOldClass("inla.spde2")
+setOldClass("inla.data.stack")
+setOldClass("inla")
+
+OccupancyMildew <- setRefClass(
+  "OccupancyMildew",
+  fields = list(
+    basePath = "character",
+    runParallel = "logical",
+    
+    data = "data.frame",
+    response = "character",
+    type = "character",
+    tag = "character",
+    coords.scale = "integer",
+    mesh = "inla.mesh",
+    spde = "inla.spde2",
+    index = "list",
+    A = "Matrix",
+    
+    covariates = "data.frame",
+    model = "formula",
+    data.stack = "inla.data.stack",
+    result = "inla"
+  ),
+  methods = list(
+    initialize = function(runParallel=FALSE, ...) {
+      callSuper(response="occupancy", runParallel=runParallel, ...)
+    },
+
+    mergeRainfall = function(mildew, rainfallFile="W_uni.csv") {
+      message("Loading rainfall data...")
+      rainfall <- read.csv(file.path(basePath, rainfallFile))
+      return(merge(mildew, rainfall, sort=FALSE, all.x=TRUE, all.y=FALSE, by=c("ID", "Year")))
+    },  
+    
+    loadData = function(mildewFile="SO_with_covariates_univariate_complete_2001_2012.csv") {
+      message("Loading occupancy data...")
+      
+      mildew <- read.csv(file.path(basePath, mildewFile))
+      mildew <- transform(mildew, y=as.logical(PA), road_PA=as.logical(road_PA), Open_bin=as.logical(Open_bin), varjoisuus=factor(varjoisuus),
+                          fallPLM2=fallPLM2, Distance_to_shore=Distance_to_shore, fallPLdry=fallPLdry,
+                          logfallPLM2=log(fallPLM2), logDistance_to_shore=log(Distance_to_shore), S=S)
+      mildew <- mergeRainfall(mildew)
+      mildew$fallPLdry[mildew$fallPLdry > 100] <- NA
+      mildew$varjoisuus[mildew$varjoisuus == 0] <- NA
+      mildew$S <- NULL
+      
+      data <<- mildew
+    },
+    
+    connectivity = function(z1, z2, area, alpha, occurrence=1) {
+      return(sum(exp(-alpha * Mod(z2 - z1)) * sqrt(area) * occurrence, na.rm=T))
+    },
+    
+    addLandscapeConnectivity = function(connectivityScale) {
+      require(plyr)
+
+      message("Computing landscape connectivity...")
+      
+      # Find mean patch coverage for each patch across all years
+      x <- ddply(data, .(ID), function(x) {
+          data.frame(Z=complex(real=x$Latitude, imaginary=x$Longitude)[1], A=mean(x$fallPLM2))
+        }, .parallel=runParallel)
+      
+      # Landscape connectivity
+      x$S <- NA
+      for (i in 1:nrow(x)) {
+        x$S[i] <- connectivity(x$Z[i], x$Z[-i], x$A[-i], 1 / connectivityScale)
+      }
+      y <- merge(data, x[,c("ID","S")], by="ID", sort=F)
+      data <<- y     
+    },
+    
+    getPersistence = function() {
+      # Check whether mildew survived over the winter
+            
+      occupancy <- if (class(.self) == "OccupancyMildew") .self
+      else {
+        x <- OccupancyMildew(basePath=basePath, runParallel=runParallel)
+        x$loadData()
+        x
+      }
+      
+      message("Computing persistence...")
+      
+      persistence <- c()
+      years <- sort(unique(occupancy$data$Year))[-1]
+      persistence <- ldply(years, function(year, occ.data) {        
+        message("Processing year ", year, "...")
+        
+        x1 <- subset(occ.data, Year==year-1)
+        x2 <- subset(occ.data, Year==year)
+        x2$persistent <- NA
+        for (i in 1:nrow(x2)) {
+          j <- which(x1$ID == x2$ID[i])
+          if (length(j)==1)
+            x2$persistent[i] <- x1$PA[j]==1 & x2$PA[i]==1
+        }
+        return(x2)
+      }, occ.data=occupancy$data, .parallel=runParallel)
+      
+      occupancy$data <- merge(occupancy$data, persistence[,c("ID","Year","persistent")], by=c("ID","Year"), all.x=T, sort=F)
+      return(occupancy$data)
+    },
+
+    addPopulationConnectivity = function(connectivityScale) {
+      require(plyr)
+      
+      persistence <- getPersistence()
+      
+      message("Computing population connectivity...")
+      
+      # Population connectivity and persistent population connectivity
+      x <- ddply(persistence, .(Year), function(x, scale) {
+        message("Processing year ", x$Year[1], "...")
+        
+        Z <- complex(real=x$Longitude, imaginary=x$Latitude)
+        x$Smildew <- NA
+        x$Smildew_pers <- NA
+        for (i in 1:nrow(x)) {
+          x$Smildew[i] <- connectivity(Z[i], Z[-i], x$fallPLM2[-i], 1 / scale, x$PA[-i])
+          x$Smildew_pers[i] <- connectivity(Z[i], Z[-i], x$fallPLM2[-i], 1 / scale, x$persistent[-i])
+        }
+        return(x)
+      }, scale=connectivityScale, .parallel=runParallel)
+      
+      y <- merge(data, x[,c("ID","Year","Smildew","Smildew_pers")], by=c("ID","Year"))      
+      data <<- y
+    },
+    
+    reid = function(id)
+    {
+      newid <- integer(length(id))
+      hash <- list()
+      count <- 0
+      for (i in 1:length(id)) {
+        if (is.null(hash[[as.character(id[i])]])) {
+          count <- count + 1
+          hash[[as.character(id[i])]] <- count
+          newid[i] <- count        
+        }
+        else {
+          newid[i] <- hash[[as.character(id[i])]]
+        }
+      }
+      return(newid)
+    },
+    
+    setupModel = function(type, scale.covariates=TRUE, fixed.effects, min.angle, max.edge, cutoff, coords.scale=1, plot=FALSE) {
+      type <<- type
+      coords.scale <<- as.integer(coords.scale)
+      
+      random.effects <- switch(type,
+                               glm=NULL,
+                               temporalreplicate2="f(s, model='iid', group=s.group, control.group=list(model='ar1'))",
+                               spatialreplicate2="f(s, model=spde, group=s.group, control.group=list(model='ar1', hyper=list(theta=list(initial=0, fixed=T))))",
+                               spatiotemporal="f(s, model=spde, group=s.group, control.group=list(model='ar1'))",
+                               spatialonly="f(s, model=spde)",
+                               temporalonly="f(data$ID, model='iid', group=s.group, control.group=list(model='ar1'))",
+                               spatialreplicate="f(s, model=spde, replicate=s.repl)",
+                               temporalreplicate="f(data$ID, model='ar1', replicate=group.years)")
+      model <<- as.formula(paste(c("y ~ -1 + intercept", paste(fixed.effects, collapse=" + "), random.effects), collapse=" + "))      
+            
+      if (scale.covariates) {
+        require(arm)
+        
+        message("Scaling covariates...")
+        
+        data <<- data[complete.cases(data),]
+        
+        data$fallPLM2 <<- rescale(data$fallPLM2)
+        data$road_PA <<- rescale(data$road_PA)
+        data$Distance_to_shore <<- rescale(data$Distance_to_shore)
+        data$Open_bin <<- rescale(data$Open_bin)    
+        if (any(names(data) == "S")) data$S <<- rescale(data$S)
+        if (any(names(data) == "Smildew")) data$Smildew <<- rescale(data$Smildew)
+        if (any(names(data) == "Smildew_pers")) data$Smildew_pers <<- rescale(data$Smildew_pers)
+        data$fallPLdy <<- rescale(data$fallPLdry)
+        #data$varjoisuus <<- rescale(data$varjoisuus)
+        data$Rainfall_August <<- rescale(data$Rainfall_August)
+        data$Rainfall_July <<- rescale(data$Rainfall_July)
+        data$logDistance_to_shore <<- rescale(data$logDistance_to_shore)
+      }
+      
+      #data$intercept <- 1
+      #covariates <<- as.data.frame(model.matrix(model, data=data[,names(data) != "y"], na.action=na.fail))
+      covariates <<- as.data.frame(model.matrix(~-1+., data=data[,names(data) != "y"], na.action=na.fail))
+
+      if (type == "glm" | type == "temporalreplicate" | type == "temporalreplicate2") return()
+
+      message("Constructing mesh...")
+        
+      locations <- cbind(data$Longitude, data$Latitude) / coords.scale
+      mesh <<- inla.mesh.create.helper(points.domain=locations, min.angle=min.angle, max.edge=max.edge / coords.scale, cutoff=cutoff / coords.scale)
+
+      if (plot) {
+        plot(mesh)
+        points(locations, col="red", pch=16, cex=.1)
+      }
+      
+      message("Number of mesh nodes = ", mesh$n)
+
+      years <- data$Year
+      n.years <- length(unique(years))
+      group.years <- years - min(years) + 1
+      spde <<- inla.spde2.matern(mesh)  
+      
+      if (type == "spatiotemporal" | type == "spatialreplicate2"  | type == "temporalreplicate2") {
+        index <<- inla.spde.make.index("s", n.spde=mesh$n, n.group=n.years)
+        A <<- inla.spde.make.A(mesh, loc=locations, group=group.years, n.group=n.years)
+      }
+      else if (type == "spatialonly") {
+        index <<- inla.spde.make.index("s", n.spde=mesh$n)
+        A <<- inla.spde.make.A(mesh, loc=locations)
+      }
+      else if (type == "spatialreplicate") {
+        index <<- inla.spde.make.index("s", n.spde=mesh$n, n.repl=n.years)
+        data$reID <<- reid(data$ID)
+        A <<- inla.spde.make.A(mesh, loc=locations, index=data$reID, repl=group.years)    
+      }
+      else if (type == "temporalonly") {
+        index <<- inla.spde.make.index("s", n.spde=mesh$n, n.group=n.years)
+        A <<- inla.spde.make.A(mesh, loc=locations, group=group.years, n.group=n.years)
+      }
+    },
+    
+    invlogit = function(x) exp(x)/(1+exp(x)),
+
+    estimate = function(tag, saveToFile=F) {
+      tag <<- tag
+      
+      message("Estimating model ", model[2], " ", model[1], " ", model[3], "...")
+      
+      if (type=="glm") {
+        result <<- inla(model, family="binomial",
+                       data=cbind(covariates, intercept=1, y=as.numeric(data$y)),
+                       verbose=TRUE,
+                       control.predictor=list(compute=TRUE),
+                       control.compute=list(cpo=FALSE, dic=TRUE))
+        
+        data$mu <<- invlogit(result$summary.linear.predictor$mean)
+      }
+      else if (type=="temporalreplicate") {
+        result <<- inla(model, family="binomial",
+                       data=cbind(covariates, intercept=1, y=as.numeric(data$y)),
+                       verbose=TRUE,
+                       control.predictor=list(compute=TRUE),
+                       control.compute=list(cpo=FALSE, dic=TRUE))
+        
+        data.full <- expand.grid(ID=unique(data$ID), Year=unique(data$Year))  
+        data.full$random <- result$summary.random$"data$ID"$mean
+        data <<- merge(data, data.full)
+        
+        data$mu <<- invlogit(result$summary.linear.predictor$mean)
+      }
+      else {
+        data.stack <<- inla.stack(data=list(y=as.numeric(data$y)),
+                                 A=list(A, 1),
+                                 effects=list(c(index, list(intercept=1)), covariates),
+                                 tag="pred")
+        
+        result <<- inla(model, family="binomial", data=inla.stack.data(data.stack),
+                       verbose=TRUE,
+                       control.predictor=list(A=inla.stack.A(data.stack), compute=TRUE),
+                       control.compute=list(cpo=FALSE, dic=TRUE))
+        
+        if (type != "temporalonly") {
+          data$random <<- as.vector(A %*% result$summary.random$s$mean)
+        }
+        
+        index.pred <- inla.stack.index(data.stack, "pred")$data
+        data$mu <<- invlogit(result$summary.linear.predictor$mean[index.pred])
+      }
+
+      data$residual <<- data$y - data$mu
+
+      message("Finished estimating ", response, "-", type, "-", tag)
+      
+      if (saveToFile) {
+        saveResult()
+      }
+    },
+    
+    getResultFileName = function(response, type, tag) {
+      return(file.path(basePath, paste("MildewResult-", response, "-", type, "-", tag, ".RData", sep="")))
+    },
+    
+    saveResult = function() {
+      save(result, data, data.stack, covariates, model, mesh, spde, index, coords.scale, A, file=getResultFileName(response, type, tag))
+    },
+    
+    loadResult = function(response, type, tag) {
+      response <<- response
+      type <<- type
+      tag <<- tag
+      load(getResultFileName(response, type, tag))
+    },
+    
+    summaryResult = function() {
+      print(summary(result))
+    },
+    
+    summaryHyperparameters = function() {
+      if (!any(names(result) == "summary.hyperpar")) {
+        message("Model has no hyperparameters.")
+      }
+      else {
+        spde.result <- inla.spde2.result(result, "s", spde)
+        
+        range.t <- inla.tmarginal(function(x) x * coords.scale, spde.result$marginals.range.nominal$range.nominal.1)
+        range.e <- inla.emarginal(function(x) x, range.t)
+        range.e2 <- inla.emarginal(function(x) x^2, range.t)
+        range.sd <- sqrt(range.e2-range.e^2)
+        range.q <- inla.qmarginal(c(0.025, 0.5, 0.975), range.t)
+        
+        var.t <- inla.tmarginal(function(x) x, spde.result$marginals.variance.nominal$variance.nominal.1)
+        var.e <- inla.emarginal(function(x) x, var.t)
+        var.e2 <- inla.emarginal(function(x) x^2, var.t)
+        var.sd <- sqrt(var.e2-var.e^2)
+        var.q <- inla.qmarginal(c(0.025, 0.5, 0.975), var.t)
+        
+        kappa.t <- inla.tmarginal(function(x) x / coords.scale, spde.result$marginals.kappa$kappa.1)
+        kappa.e <- inla.emarginal(function(x) x, kappa.t)
+        kappa.e2 <- inla.emarginal(function(x) x^2, kappa.t)
+        kappa.sd <- sqrt(kappa.e2-kappa.e^2)
+        kappa.q <- inla.qmarginal(c(0.025, 0.5, 0.975), kappa.t)
+        
+        tau.t <- inla.tmarginal(function(x) x * coords.scale, spde.result$marginals.tau$tau.1)
+        tau.e <- inla.emarginal(function(x) x, tau.t)
+        tau.e2 <- inla.emarginal(function(x) x^2, tau.t)
+        tau.sd <- sqrt(tau.e2-tau.e^2)
+        tau.q <- inla.qmarginal(c(0.025, 0.5, 0.975), tau.t)
+        
+        y <- rbind(kappa=c(kappa.e, kappa.sd, kappa.q),
+                   tau=c(tau.e, tau.sd, tau.q),
+                   range=c(range.e, range.sd, range.q),
+                   variance=c(var.e, var.sd, var.q))
+        if (any(rownames(result$summary.hyperpar)=="GroupRho for s"))
+          y <- rbind(y, rho=result$summary.hyperpar["GroupRho for s",])
+        colnames(y) <- c("mean","sd","0.025quant","0.5quant","0.975quant")
+        print(y)
+        invisible(y)
+      }
+    },
+    
+    saveResultCSV = function(fileName) {
+      write.csv(result, file=fileName)
+    },
+
+    loadBorder = function(fileName=file.path(basePath, "alandmap_1_20000/alandmap_rough")) {
+      require(sp)
+      require(maptools)
+      return(readShapeSpatial(fileName))
+    },
+    
+    plotMesh = function(borderFileName) {
+      if (is.null(mesh)) stop("Mesh has not been set up.")
+      
+      border <- if (missing(borderFileName)) loadBorder()
+      else loadBorder(fileName=borderFileName)
+      
+      t.sub <- 1:nrow(mesh$graph$tv)
+      xlim <- range(mesh$loc[,1]) * coords.scale
+      ylim <- range(mesh$loc[,2]) * coords.scale
+      idx <- t(cbind(mesh$graph$tv[t.sub, c(1:3, 1), drop = FALSE], NA))
+      x <- mesh$loc[idx, 1] * coords.scale
+      y <- mesh$loc[idx, 2] * coords.scale
+      
+      plot.new()
+      plot.window(xlim = xlim, ylim = ylim, "", asp=1)
+      lines(x, y, type = "l", col = "gray", lwd=3)
+      plot(border, add=T, border="black", lwd=6)
+      points(unique(cbind(data$Longitude, data$Latitude)), pch=20, col="red")  
+    }
+    
+  )
+)
+
+ExtinctionMildew <- setRefClass(
+  "ExtinctionMildew",
+  contains = "OccupancyMildew",
+  fields = list(
+  ),
+  methods = list(
+    initialize = function(...) {
+      callSuper(response="extinction", ...)
+    },
+    
+    loadData = function(mildewFile="SO_ext_univariate_complete_2001_2012.csv") {
+      message("Loading extinction data...")
+      
+      mildew <- read.csv(mildewFile)
+      mildew <- transform(mildew, y=as.logical(Ext), road_PA=as.logical(road_PA), Open_bin=as.logical(Open_bin), varjoisuus=factor(varjoisuus),
+                          fallPLM2=fallPLM2, Distance_to_shore=Distance_to_shore, fallPLdry=fallPLdry,
+                          logfallPLM2=log(fallPLM2), logDistance_to_shore=log(Distance_to_shore), S=S)
+      mildew <- mergeRainfall(mildew)
+      mildew$fallPLdry[mildew$fallPLdry > 100] <- NA
+      mildew$varjoisuus[mildew$varjoisuus == 0] <- NA
+      mildew$S <- NULL
+      mildew$Smildew <- NULL
+      mildew$Smildew_pers <- NULL
+            
+      data <<- mildew
+    }
+  )
+)
+
+ColonizationMildew <- setRefClass(
+  "ColonizationMildew",
+  contains = "OccupancyMildew",
+  fields = list(
+  ),
+  methods = list(
+    initialize = function(...) {
+      callSuper(response="colonization", ...)
+    },
+    
+    loadData = function(mildewFile="SO_col_univariate_complete_2001_2012.csv") {
+      message("Loading colonization data...")
+      
+      mildew <- read.csv(mildewFile)
+      mildew <- transform(mildew, y=as.logical(Col), road_PA=as.logical(road_PA), Open_bin=as.logical(Open_bin), varjoisuus=factor(varjoisuus),
+                          fallPLM2=fallPLM2, Distance_to_shore=Distance_to_shore, fallPLdry=fallPLdry,
+                          logfallPLM2=log(fallPLM2), logDistance_to_shore=log(Distance_to_shore), S=S)
+      mildew <- mergeRainfall(mildew)
+      mildew$fallPLdry[mildew$fallPLdry > 100] <- NA
+      mildew$varjoisuus[mildew$varjoisuus == 0] <- NA
+      mildew$S <- NULL
+      mildew$Smildew <- NULL
+      mildew$Smildew_pers <- NULL
+
+      data <<- mildew
+    }
+  )
+)
