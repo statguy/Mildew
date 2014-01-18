@@ -70,6 +70,7 @@ OccupancyMildew <- setRefClass(
       mildew$varjoisuus[mildew$varjoisuus == 0] <- NA
       
       data <<- mildew
+      return(.self)
     },
     
     connectivity = function(z1, z2, area, alpha, occurrence=1) {
@@ -91,6 +92,8 @@ OccupancyMildew <- setRefClass(
       for (i in 1:nrow(x)) {
         x$S[i] <- connectivity(x$Z[i], x$Z[-i], x$A[-i], 1 / connectivityScale)
       }
+      
+      data$S <<- NULL
       y <- merge(data, x[,c("ID","S")], by="ID", sort=F)
       data <<- y     
     },
@@ -149,8 +152,8 @@ OccupancyMildew <- setRefClass(
         return(x)
       }, scale=connectivityScale, .parallel=runParallel)
       
-      x$Smildew <- NULL
-      x$Smildew_pers <- NULL
+      data$Smildew <<- NULL
+      data$Smildew_pers <<- NULL
       y <- merge(data, x[,c("ID","Year","Smildew","Smildew_pers")], by=c("ID","Year"))      
       data <<- y
     },
@@ -415,7 +418,7 @@ ExtinctionMildew <- setRefClass(
     loadData = function(mildewFile="SO_ext_univariate_complete_2001_2012.csv") {
       message("Loading extinction data...")
       
-      mildew <- read.csv(mildewFile)
+      mildew <- read.csv(file.path(basePath, mildewFile))
       mildew <- transform(mildew, y=as.logical(Ext), road_PA=as.logical(road_PA), Open_bin=as.logical(Open_bin), varjoisuus=factor(varjoisuus),
                           fallPLM2=fallPLM2, Distance_to_shore=Distance_to_shore, fallPLdry=fallPLdry,
                           logfallPLM2=log(fallPLM2), logDistance_to_shore=log(Distance_to_shore), S=S)
@@ -424,6 +427,7 @@ ExtinctionMildew <- setRefClass(
       mildew$varjoisuus[mildew$varjoisuus == 0] <- NA
             
       data <<- mildew
+      return(.self)
     }
   )
 )
@@ -442,7 +446,7 @@ ColonizationMildew <- setRefClass(
     loadData = function(mildewFile="SO_col_univariate_complete_2001_2012.csv") {
       message("Loading colonization data...")
       
-      mildew <- read.csv(mildewFile)
+      mildew <- read.csv(file.path(basePath, mildewFile))
       mildew <- transform(mildew, y=as.logical(Col), road_PA=as.logical(road_PA), Open_bin=as.logical(Open_bin), varjoisuus=factor(varjoisuus),
                           fallPLM2=fallPLM2, Distance_to_shore=Distance_to_shore, fallPLdry=fallPLdry,
                           logfallPLM2=log(fallPLM2), logDistance_to_shore=log(Distance_to_shore), S=S)
@@ -451,6 +455,7 @@ ColonizationMildew <- setRefClass(
       mildew$varjoisuus[mildew$varjoisuus == 0] <- NA
 
       data <<- mildew
+      return(.self)
     }
   )
 )
