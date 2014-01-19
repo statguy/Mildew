@@ -347,14 +347,18 @@ OccupancyMildew <- setRefClass(
     },
     
     saveResult = function() {
-      save(result, data, data.stack, covariates, model, mesh, spde, index, coords.scale, A, file=getResultFileName(response, type, tag))
+      fileName <- getResultFileName(response, type, tag)
+      message("Saving result to ", fileName, "...")
+      save(result, data, data.stack, covariates, model, mesh, spde, index, coords.scale, A, file=fileName)
     },
     
     loadResult = function(response, type, tag) {
       response <<- response
       type <<- type
       tag <<- tag
-      load(getResultFileName(response, type, tag))
+      fileName <- getResultFileName(response, type, tag)
+      message("Loading result from ", fileName, "...")
+      load(fileName)
     },
     
     summaryResult = function() {
