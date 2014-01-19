@@ -3,13 +3,11 @@ R-Mildew
 
 Setup
 -----
-Download and install `git` from [http://git-scm.com/downloads](http://git-scm.com/downloads) to your system.
-Create directory `git` and in it, run command
-```
-git clone https://github.com/statguy/R-Mildew.git
-```
-Now you should have directory `R-Mildew` under `git` with all the files.
-You may open the project file in [RStudio](http://www.rstudio.com/).
+Set up [Git](http://git-scm.com/) version control system by following the instructions here
+[http://www.rstudio.com/ide/docs/version_control/overview](http://www.rstudio.com/ide/docs/version_control/overview).
+Create a new project in [RStudio](http://www.rstudio.com/) as explained in the instructions
+with the Git repository URL `https://github.com/statguy/R-Mildew.git`. Alternatively, you can just download
+the `*.R` files from the repository URL to your local system.
 
 Code files
 ----------
@@ -31,9 +29,9 @@ source_url("https://raw.github.com/statguy/R-Mildew/master/classes.R")
 to point to the local files, e.g.
 ```r
 source("Cluster.R")
-source("~/git/R-Mildew/classes.R")
+source("classes.R")
 ```
-You need to download and save ```Cluster.R``` to your system first from the above address.
+Beside cloning the R-Mildew Git repository, you also need to download ```Cluster.R``` to your system from the above address.
 If you experience problems with parallel processing, set
 ```r
 runParallel <- FALSE
