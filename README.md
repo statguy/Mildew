@@ -3,8 +3,8 @@ R-Mildew
 
 Setup
 -----
-Set up [Git](http://git-scm.com/) version control system by following the instructions here
-[http://www.rstudio.com/ide/docs/version_control/overview](http://www.rstudio.com/ide/docs/version_control/overview).
+Set up [Git](http://git-scm.com/) version control system by following the instructions
+[here](http://www.rstudio.com/ide/docs/version_control/overview).
 Create a new project in [RStudio](http://www.rstudio.com/) as explained in the instructions
 with the Git repository URL `https://github.com/statguy/R-Mildew.git`. Alternatively, you can just download
 the `*.R` files from the repository URL to your local system.
