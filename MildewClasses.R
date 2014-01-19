@@ -40,6 +40,7 @@ OccupancyMildew <- setRefClass(
     spde = "inla.spde2",
     index = "list",
     A = "Matrix",
+    group.years = "integer",
     
     covariates = "ANY",
     model = "formula",
@@ -182,7 +183,6 @@ OccupancyMildew <- setRefClass(
     
     setupModel = function(type, scale.covariates=TRUE, fixed.effects, mesh.params, plot=FALSE) {
       type <<- type
-      coords.scale <<- mesh.params$coords.scale
       data <<- data[complete.cases(data),]
       
       random.effects <- switch(type,
@@ -224,26 +224,27 @@ OccupancyMildew <- setRefClass(
         }
       }
       
-      if (type == "glm" | type == "temporalreplicate" | type == "temporalreplicate2") return(.self)
+      years <- data$Year
+      n.years <- length(unique(years))
+      group.years <<- as.integer(years - min(years) + 1)
+      
+      if (type == "glm" | type == "temporalreplicate") return(.self)
 
       message("Constructing mesh...")
-        
+      
+      coords.scale <<- mesh.params$coords.scale
       locations <- cbind(data$Longitude, data$Latitude) / coords.scale
       mesh <<- inla.mesh.create.helper(points.domain=locations, min.angle=mesh.params$min.angle, max.edge=mesh.params$max.edge / coords.scale, cutoff=mesh.params$cutoff / coords.scale)
-
+      spde <<- inla.spde2.matern(mesh) 
+      
       if (plot) {
         plot(mesh)
         points(locations, col="red", pch=16, cex=.1)
       }
       
-      message("Number of mesh nodes = ", mesh$n)
-
-      years <- data$Year
-      n.years <- length(unique(years))
-      group.years <- years - min(years) + 1
-      spde <<- inla.spde2.matern(mesh)  
+      message("Number of mesh nodes = ", mesh$n) 
       
-      if (type == "spatiotemporal" | type == "spatialreplicate2"  | type == "temporalreplicate2") {
+      if (type == "spatiotemporal") {
         index <<- inla.spde.make.index("s", n.spde=mesh$n, n.group=n.years)
         A <<- inla.spde.make.A(mesh, loc=locations, group=group.years, n.group=n.years)
       }
@@ -260,7 +261,7 @@ OccupancyMildew <- setRefClass(
         index <<- inla.spde.make.index("s", n.spde=mesh$n, n.group=n.years)
         A <<- inla.spde.make.A(mesh, loc=locations, group=group.years, n.group=n.years)
       }
-      else stop("Unknown type '", type, "'.")
+      else stop("Unknown model '", type, "'.")
       
       return(.self)
     },
@@ -272,21 +273,27 @@ OccupancyMildew <- setRefClass(
       
       message("Estimating model ", model[2], " ", model[1], " ", model[3], "...")
       
-      if (type=="glm") {
+      if (type == "glm") {
         result <<- inla(model, family="binomial",
                        data=cbind(covariates, intercept=1, y=as.numeric(data$y)),
                        verbose=TRUE,
                        control.predictor=list(compute=TRUE),
                        control.compute=list(cpo=FALSE, dic=TRUE))
+        if (is.null(result$ok) || result$ok == FALSE) {
+          stop("INLA failed to run.")
+        }
         
         data$mu <<- invlogit(result$summary.linear.predictor$mean)
       }
-      else if (type=="temporalreplicate") {
+      else if (type == "temporalreplicate") {
         result <<- inla(model, family="binomial",
                        data=cbind(covariates, intercept=1, y=as.numeric(data$y)),
                        verbose=TRUE,
                        control.predictor=list(compute=TRUE),
                        control.compute=list(cpo=FALSE, dic=TRUE))
+        if (is.null(result$ok) || result$ok == FALSE) {
+          stop("INLA failed to run.")
+        }
         
         data.full <- expand.grid(ID=unique(data$ID), Year=unique(data$Year))  
         data.full$random <- result$summary.random$"data$ID"$mean
@@ -299,7 +306,7 @@ OccupancyMildew <- setRefClass(
           inla.stack(data=list(y=as.numeric(data$y)),
             A=list(A),
             effects=list(c(index, list(intercept=1))),
-            tag="pred")          
+            tag="pred")
         }
         else {
           inla.stack(data=list(y=as.numeric(data$y)),
@@ -312,6 +319,9 @@ OccupancyMildew <- setRefClass(
                        verbose=TRUE,
                        control.predictor=list(A=inla.stack.A(data.stack), compute=TRUE),
                        control.compute=list(cpo=FALSE, dic=TRUE))
+        if (is.null(result$ok) || result$ok == FALSE) {
+          stop("INLA failed to run.")
+        }
         
         if (type != "temporalonly") {
           data$random <<- as.vector(A %*% result$summary.random$s$mean)
