@@ -37,7 +37,28 @@ Beside cloning the R-Mildew Git repository, you also need to download ```Cluster
 If you experience problems with parallel processing, set
 ```r
 runParallel <- FALSE
-``` 
+```
+
+Estimation
+----------
+
+With the current configuration, estimation may take up to 1 day in a powerful system.
+You may want to construct a mesh with less nodes by adjusting the mesh parameters
+`occ.mesh.params, col.mesh.params, ext.mesh.params` in `estimate.R` or use
+a subset of the data for testing. Use the `plotMesh` method, e.g.
+```r
+occ$plotMesh()
+```
+to plot the mesh.
+
+Extensions
+----------
+
+Extending the current code can be done by inheriting the classes. See more info with the `R` command
+```r
+?ReferenceClasses
+```
+You may want to consider [forking](https://help.github.com/articles/fork-a-repo) the repository for your own use first.
 
 Todo
 ----
