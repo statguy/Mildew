@@ -23,17 +23,6 @@ contains high level code to load all results and print reports.
 Configuration
 -------------
 Set `basePath` in `estimate.R` and `reports.R` to point to your mildew data directory.
-In case you want to `source` the files from your local disk, then change the lines
-```r
-source_url("https://raw.github.com/statguy/RSnippets/master/Cluster/Cluster.R")
-source_url("https://raw.github.com/statguy/R-Mildew/master/classes.R")
-```
-to point to the local files, e.g.
-```r
-source("Cluster.R")
-source("classes.R")
-```
-Beside cloning the R-Mildew Git repository, you also need to download ```Cluster.R``` to your system from the above address.
 If you experience problems with parallel processing, set
 ```r
 runParallel <- FALSE
@@ -42,7 +31,7 @@ runParallel <- FALSE
 Estimation
 ----------
 
-With the current configuration, estimation may take up to 1 day in a powerful system.
+With the current configuration, estimation may take up to 1 day per model in a powerful system.
 You may want to construct a mesh with less nodes by adjusting the mesh parameters
 `occ.mesh.params, col.mesh.params, ext.mesh.params` in `estimate.R` or use
 a subset of the data for testing. Use the `plotMesh` method, e.g.

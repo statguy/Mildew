@@ -1,12 +1,12 @@
-library(devtools)
-source_url("https://raw.github.com/statguy/RSnippets/master/Cluster/Cluster.R")
-source_url("https://raw.github.com/statguy/R-Mildew/master/classes.R")
+source("classes.R")
 
 basePath <- "~/phd/mildew" # Set your path to the data files here
 runParallel <- TRUE
 
 cluster <- NA
 if (runParallel) {
+  library(devtools)
+  source_url("https://raw.github.com/statguy/RSnippets/master/Cluster/Cluster.R")
   cluster <- Cluster$new()
   cluster$startLocalCluster()
 }
