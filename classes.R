@@ -352,17 +352,18 @@ OccupancyMildew <- setRefClass(
       save(result, data, data.stack, covariates, model, mesh, spde, index, coords.scale, A, file=fileName)
     },
     
-    loadResult = function(response, type, tag) {
-      response <<- response
+    loadResult = function(type, tag) {
       type <<- type
       tag <<- tag
       fileName <- getResultFileName(response, type, tag)
-      message("Loading result from ", fileName, "...")
-      load(fileName)
+      message("Loading result from ", fileName, "...")      
+      load(fileName, envir=as.environment(.self))
+      invisible(.self)
     },
     
     summaryResult = function() {
       print(summary(result))
+      invisible(.self)
     },
     
     summaryHyperparameters = function() {
@@ -406,12 +407,9 @@ OccupancyMildew <- setRefClass(
         print(y)
         invisible(y)
       }
+      invisible(.self)
     },
     
-    saveResultCSV = function(fileName) {
-      write.csv(result, file=fileName)
-    },
-
     loadBorder = function(fileName=file.path(basePath, "alandmap_1_20000/alandmap_rough")) {
       require(sp)
       require(maptools)
@@ -435,7 +433,13 @@ OccupancyMildew <- setRefClass(
       plot.window(xlim = xlim, ylim = ylim, "", asp=1)
       lines(x, y, type = "l", col = "gray", lwd=3)
       plot(border, add=T, border="black", lwd=6)
-      points(unique(cbind(data$Longitude, data$Latitude)), pch=20, col="red")  
+      points(unique(cbind(data$Longitude, data$Latitude)), pch=20, col="red")
+      
+      invisible(.self)
+    },
+    
+    saveDataCSV = function(fileName) {
+      write.csv(data, file=fileName)
     }
   )
 )

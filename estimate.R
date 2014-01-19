@@ -46,19 +46,19 @@ occ.fixed.effects <- "fallPLM2 + S + road_PA + varjoisuus2 + varjoisuus3 + Rainf
 col.fixed.effects <- "fallPLM2 + S + Smildew_pers + road_PA + varjoisuus2 + varjoisuus3 + Rainfall_August"
 ext.fixed.effects <- "fallPLM2 + S + Smildew + road_PA"
 
-estimateOrdinaryLogisticModel <- function(mildew, connectivity.scale, fixed.effects, tag="fit", type="glm") {
+estimateOrdinaryLogisticModel <- function(mildew, connectivity.scale, fixed.effects, tag="", type="glm") {
   mildew$addLandscapeConnectivity(connectivity.scale=connectivity.scale)
   mildew$addPopulationConnectivity(connectivity.scale=connectivity.scale)
   mildew$setupModel(type=type, fixed.effects=fixed.effects)
   mildew$estimate(tag=tag, saveToFile=TRUE)
 }
 
-estimateInterceptOnlyRandomEffectModel <- function(mildew, connectivity.scale, mesh.params, tag="fit", type) {
+estimateInterceptOnlyRandomEffectModel <- function(mildew, connectivity.scale, mesh.params, tag="interceptonly", type) {
   mildew$setupModel(type=type, mesh.params=mesh.params)
   mildew$estimate(tag=tag, saveToFile=TRUE)
 }
 
-estimateRandomEffectModel <- function(mildew, connectivity.scale, fixed.effects, mesh.params, tag="fit", type) {
+estimateRandomEffectModel <- function(mildew, connectivity.scale, fixed.effects, mesh.params, tag="", type) {
   mildew$addLandscapeConnectivity(connectivity.scale=connectivity.scale)
   mildew$addPopulationConnectivity(connectivity.scale=connectivity.scale)
   mildew$setupModel(type=type, fixed.effects=fixed.effects, mesh.params=mesh.params)
