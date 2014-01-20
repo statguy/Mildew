@@ -11,7 +11,7 @@ You can update the project to the latest version from the RStudio menu Tools &ra
 Control &rarr; Pull Branches.
 Alternatively, you can just download the `*.R` files from the repository URL to your local system.
     
-You also need to install several packages for `R`: `plyr`, `arm`, `sp`, `maptools` and
+You also need to install several packages for R: `plyr`, `arm`, `sp`, `maptools` and
 [`R-INLA`](http://www.r-inla.org/) testing version, which you can install with the command
 ```r
 source("http://www.math.ntnu.no/inla/givemeINLA-testing.R")
@@ -51,7 +51,7 @@ to plot the mesh.
 Extensions
 ----------
 
-Extending the current code can be done by inheriting the classes. See more info with the `R` command
+Extending the current code can be done by inheriting the classes. See more info with the R command
 ```r
 ?ReferenceClasses
 ```
