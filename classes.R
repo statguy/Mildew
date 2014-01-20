@@ -38,7 +38,7 @@ OccupancyMildew <- setRefClass(
       return(merge(mildew, rainfall, sort=FALSE, all.x=TRUE, all.y=FALSE, by=c("ID", "Year")))
     },  
     
-    loadData = function(mildewFile="SO_with_covariates_univariate_complete_2001_2012.csv") {
+    loadRawData = function(mildewFile="SO_with_covariates_univariate_2001_2012.csv") {
       message("Loading ", response, " data...")
       
       mildew <- read.csv(file.path(basePath, mildewFile))
@@ -50,6 +50,69 @@ OccupancyMildew <- setRefClass(
       mildew$varjoisuus[mildew$varjoisuus == 0] <- NA
       
       data <<- mildew
+      return(.self)
+    },
+
+    # Imputation by k nearest neighbors regressiong using Gower's distance to allow categorical variables
+    impute = function(k=10, aggregation.function=median, distance.metric="gower", exclude.distance.columns=NULL, exclude.imputation.columns=NULL) {
+      require(cluster)
+      aggregation.function <- match.fun(aggregation.function)
+      
+      #distance.values <- matrix()
+      #distance.indices <- matrix()
+      #x <- list()
+      #for (i in !complete.cases)
+      #  x[[i]] <- distance.lookup[i,order(distance.lookup[i,])][k_seq]
+      
+      #sub <- occ$data[3000:3100,] #c("ID","Year","Latitude","Longitude","road_PA","Open_bin","Distance_to_shore","Rainfall_July","Rainfall_August",  "y","fallPLM2","fallPLdry","varjoisuus")]
+      
+      data.distance <- data[, !(colnames(data) %in% exclude.distance.columns), drop=FALSE]
+      data.imputed <- data[, !(colnames(data) %in% exclude.imputation.columns), drop=FALSE]
+      data.numeric <- data.matrix(data.imputed)
+      
+      message("Calculating distances for imputation...")
+      distance.lookup <- as.matrix(daisy(data.distance, metric=distance.metric))
+      #column.classes <- character(ncol(data.imputed))
+      #for (column in seq_along(data.imputed)) column.classes[column] <- class(data.imputed[, column])
+      
+      message("Imputing...")
+      k.seq <- 2:(k+1)
+      missing.rows <- which(!complete.cases(data.numeric))
+      for (missing.row in missing.rows) {
+        nearest.neighbor.rows <- names(distance.lookup[missing.row, order(distance.lookup[missing.row,])[k.seq]])
+        missing.columns <- which(is.na(data.numeric[missing.row,]))        
+        for (missing.column.index in 1:length(missing.columns)) {
+          missing.column <- missing.columns[missing.column.index]
+          neighbor.values <- data.numeric[nearest.neighbor.rows, missing.column]
+          imputed.value <- aggregation.function(neighbor.values, na.rm=TRUE)
+          if (is.na(imputed.value)) {
+            warning("Could not impute missing value on row = ", missing.row, ", column = ", missing.column, ": all neighboring values are NA. Consider increasing k or iterating the imputation several times.")
+          }
+          else {
+            #message("row = ", missing.row, ", column = ", missing.column, ", column.class = ", class(data.imputed[, missing.column]), ", imputed.value = ", imputed.value, " from values = ", paste(neighbor.values, collapse=" "))
+            data.imputed[missing.row, missing.column] <- switch(class(data.imputed[, missing.column]),
+              factor = round(imputed.value),
+              logical = as.logical(imputed.value),
+              numeric = imputed.value,
+              integer = as.integer(imputed.value))
+          }
+        }
+      }
+      
+      data <<- cbind(data[, colnames(data) %in% exclude.imputation.columns, drop=F], data.imputed)[, colnames(data)]
+      return(.self)
+    },
+    
+    getDataFileName = function() {
+      return(file.path(basePath, paste("MildewData-", response, ".RData", sep="")))
+    },
+    
+    saveData = function() {
+      save(data, file=getDataFileName())
+    },
+    
+    loadData = function() {
+      load(getDataFileName(), envir=as.environment(.self))
       return(.self)
     },
     
@@ -142,8 +205,7 @@ OccupancyMildew <- setRefClass(
       return(.self)
     },
     
-    reid = function(id)
-    {
+    reid = function(id) {
       newid <- integer(length(id))
       hash <- list()
       count <- 0
@@ -162,17 +224,18 @@ OccupancyMildew <- setRefClass(
     
     setupModel = function(type, scale.covariates=TRUE, fixed.effects, mesh.params, plot=FALSE) {
       type <<- type
-      data <<- data[complete.cases(data),]
+      #data <<- data[complete.cases(data),]
       
       random.effects <- switch(type,
-                               glm=NULL,
-                               temporalreplicate2="f(s, model='iid', group=s.group, control.group=list(model='ar1'))",
-                               spatialreplicate2="f(s, model=spde, group=s.group, control.group=list(model='ar1', hyper=list(theta=list(initial=0, fixed=T))))",
-                               spatiotemporal="f(s, model=spde, group=s.group, control.group=list(model='ar1'))",
-                               spatialonly="f(s, model=spde)",
-                               temporalonly="f(data$ID, model='iid', group=s.group, control.group=list(model='ar1'))",
-                               spatialreplicate="f(s, model=spde, replicate=s.repl)",
-                               temporalreplicate="f(data$ID, model='ar1', replicate=group.years)")
+        glm=NULL,
+        temporalreplicate2="f(s, model='iid', group=s.group, control.group=list(model='ar1'))",
+        spatialreplicate2="f(s, model=spde, group=s.group, control.group=list(model='ar1', hyper=list(theta=list(initial=0, fixed=T))))",
+        spatiotemporal="f(s, model=spde, group=s.group, control.group=list(model='ar1'))",
+        spatialonly="f(s, model=spde)",
+        temporalonly="f(data$ID, model='iid', group=s.group, control.group=list(model='ar1'))",
+        spatialreplicate="f(s, model=spde, replicate=s.repl)",
+        temporalreplicate="f(data$ID, model='ar1', replicate=group.years)")
+      
       if (missing(fixed.effects)) {
         model <<- as.formula(paste(c("y ~ -1 + intercept", random.effects), collapse=" + "))
         covariates <<- NULL
@@ -321,12 +384,12 @@ OccupancyMildew <- setRefClass(
       }
     },
     
-    getResultFileName = function(response, type, tag) {
+    getResultFileName = function(type, tag) {
       return(file.path(basePath, paste("MildewResult-", response, "-", type, "-", tag, ".RData", sep="")))
     },
     
     saveResult = function() {
-      fileName <- getResultFileName(response, type, tag)
+      fileName <- getResultFileName(type, tag)
       message("Saving result to ", fileName, "...")
       save(result, data, data.stack, covariates, model, mesh, spde, index, coords.scale, A, file=fileName)
     },
@@ -334,7 +397,7 @@ OccupancyMildew <- setRefClass(
     loadResult = function(type, tag) {
       type <<- type
       tag <<- tag
-      fileName <- getResultFileName(response, type, tag)
+      fileName <- getResultFileName(type, tag)
       message("Loading result from ", fileName, "...")      
       load(fileName, envir=as.environment(.self))
       invisible(.self)
@@ -434,7 +497,7 @@ ColonizationMildew <- setRefClass(
       return(.self)
     },
     
-    loadData = function(mildewFile="SO_col_univariate_complete_2001_2012.csv") {
+    loadData = function(mildewFile="SO_col_univariate_2001_2012.csv") {
       message("Loading ", response, " data...")
       
       mildew <- read.csv(file.path(basePath, mildewFile))
@@ -462,7 +525,7 @@ ExtinctionMildew <- setRefClass(
       return(.self)
     },
     
-    loadData = function(mildewFile="SO_ext_univariate_complete_2001_2012.csv") {
+    loadData = function(mildewFile="SO_ext_univariate_2001_2012.csv") {
       message("Loading ", response, " data...")
       
       mildew <- read.csv(file.path(basePath, mildewFile))
