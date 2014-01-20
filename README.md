@@ -30,7 +30,7 @@ contains high level code to load all results and print reports.
 
 Configuration
 -------------
-Set `basePath` in `estimate.R` and `reports.R` to point to your mildew data directory.
+Set `basePath` in `preprocess.R`, `estimate.R` and `reports.R` to point to your mildew data directory.
 If you experience problems with parallel processing, set
 ```r
 runParallel <- FALSE
