@@ -1,6 +1,6 @@
 source("classes.R")
 
-basePath <- "~/phd/mildew" # Set your path to the data files here
+basePath <- "~/phd/mildew/data" # Set your path to the data files here
 runParallel <- TRUE
 
 cluster <- NA
@@ -10,7 +10,6 @@ if (runParallel) {
   cluster <- Cluster$new()
   cluster$startLocalCluster()
 }
-
 
 occ <- OccupancyMildew$new(basePath=basePath, runParallel=runParallel)$loadData()
 col <- ColonizationMildew$new(basePath=basePath, runParallel=runParallel)$loadData()

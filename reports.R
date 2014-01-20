@@ -1,6 +1,6 @@
 source("classes.R")
 
-basePath <- "~/phd/mildew" # Set your path to the data files here
+basePath <- "~/phd/mildew/data" # Set your path to the data files here
 runParallel <- TRUE
 
 cluster <- NA
