@@ -4,6 +4,7 @@ setOldClass("inla.spde2")
 setOldClass("inla.data.stack")
 setOldClass("inla")
 
+
 OccupancyMildew <- setRefClass(
   "OccupancyMildew",
   fields = list(
@@ -65,14 +66,14 @@ OccupancyMildew <- setRefClass(
       message("Calculating distances for imputation...")
       distance.lookup <- daisy(data.distance, metric=distance.metric)
       #distance.lookup <- as.matrix(daisy(data.distance, metric=distance.metric))
-      
+            
       nrows <- attr(distance.lookup, "Size")
       getDistIndex <- function(row, column) nrows*(row-1) - row*(row-1)/2 + column-row
       getDistRowValues <- function(row) {
-        index <- if (row==1) getDistIndex(row, 2:n)
+        i <- if (row==1) getDistIndex(row, 2:n)
         else if (row==n) getDistIndex(1:(nrows-1), row)
         else c(getDistIndex(1:(row-1), row), getDistIndex(row, (row+1):nrows))
-        distance.values <- distance.lookup[index]
+        distance.values <- distance.lookup[i]
         names(distance.values) <- attr(distance.lookup, "Labels")[(1:nrows)[-row]]
         return(distance.values)
       }
