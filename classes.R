@@ -52,34 +52,39 @@ OccupancyMildew <- setRefClass(
       data <<- mildew
       return(.self)
     },
-
+    
     # Imputation by k nearest neighbors regressiong using Gower's distance to allow categorical variables
     impute = function(k=10, aggregation.function=median, distance.metric="gower", exclude.distance.columns=NULL, exclude.imputation.columns=NULL) {
       require(cluster)
       aggregation.function <- match.fun(aggregation.function)
-      
-      #distance.values <- matrix()
-      #distance.indices <- matrix()
-      #x <- list()
-      #for (i in !complete.cases)
-      #  x[[i]] <- distance.lookup[i,order(distance.lookup[i,])][k_seq]
-      
-      #sub <- occ$data[3000:3100,] #c("ID","Year","Latitude","Longitude","road_PA","Open_bin","Distance_to_shore","Rainfall_July","Rainfall_August",  "y","fallPLM2","fallPLdry","varjoisuus")]
       
       data.distance <- data[, !(colnames(data) %in% exclude.distance.columns), drop=FALSE]
       data.imputed <- data[, !(colnames(data) %in% exclude.imputation.columns), drop=FALSE]
       data.numeric <- data.matrix(data.imputed)
       
       message("Calculating distances for imputation...")
-      distance.lookup <- as.matrix(daisy(data.distance, metric=distance.metric))
-      #column.classes <- character(ncol(data.imputed))
-      #for (column in seq_along(data.imputed)) column.classes[column] <- class(data.imputed[, column])
+      distance.lookup <- daisy(data.distance, metric=distance.metric)
+      #distance.lookup <- as.matrix(daisy(data.distance, metric=distance.metric))
+      
+      nrows <- attr(distance.lookup, "Size")
+      getDistIndex <- function(row, column) nrows*(row-1) - row*(row-1)/2 + column-row
+      getDistRowValues <- function(row) {
+        index <- if (row==1) getDistIndex(row, 2:n)
+        else if (row==n) getDistIndex(1:(nrows-1), row)
+        else c(getDistIndex(1:(row-1), row), getDistIndex(row, (row+1):nrows))
+        distance.values <- distance.lookup[index]
+        names(distance.values) <- attr(distance.lookup, "Labels")[(1:nrows)[-row]]
+        return(distance.values)
+      }
       
       message("Imputing...")
-      k.seq <- 2:(k+1)
+      k.seq <- 1:k
+      #k.seq <- 2:(k+1)
       missing.rows <- which(!complete.cases(data.numeric))
       for (missing.row in missing.rows) {
-        nearest.neighbor.rows <- names(distance.lookup[missing.row, order(distance.lookup[missing.row,])[k.seq]])
+        distance.values <- getDistRowValues(missing.row)
+        nearest.neighbor.rows <- names(distance.values[order(distance.values)][k.seq])
+        #nearest.neighbor.rows <- names(distance.lookup[missing.row, order(distance.lookup[missing.row,])[k.seq]])
         missing.columns <- which(is.na(data.numeric[missing.row,]))        
         for (missing.column.index in 1:length(missing.columns)) {
           missing.column <- missing.columns[missing.column.index]
@@ -497,7 +502,7 @@ ColonizationMildew <- setRefClass(
       return(.self)
     },
     
-    loadData = function(mildewFile="SO_col_univariate_2001_2012.csv") {
+    loadRawData = function(mildewFile="SO_col_univariate_2001_2012.csv") {
       message("Loading ", response, " data...")
       
       mildew <- read.csv(file.path(basePath, mildewFile))
@@ -525,7 +530,7 @@ ExtinctionMildew <- setRefClass(
       return(.self)
     },
     
-    loadData = function(mildewFile="SO_ext_univariate_2001_2012.csv") {
+    loadRawData = function(mildewFile="SO_ext_univariate_2001_2012.csv") {
       message("Loading ", response, " data...")
       
       mildew <- read.csv(file.path(basePath, mildewFile))
