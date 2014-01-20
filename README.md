@@ -10,13 +10,21 @@ with the Git repository URL `https://github.com/statguy/R-Mildew.git`.
 You can update the project to the latest version from the RStudio menu Tools &rarr; Version
 Control &rarr; Pull Branches.
 Alternatively, you can just download the `*.R` files from the repository URL to your local system.
+    
+You also need to install several packages for `R`: `plyr`, `arm`, `sp`, `maptools` and
+[`R-INLA`](http://www.r-inla.org/) testing version, which you can install with the command
+```r
+source("http://www.math.ntnu.no/inla/givemeINLA-testing.R")
+```
 
 Code files
 ----------
 * `classes.R`
-contains code to load mildew data, set up models, estimate models with [`INLA`](http://www.r-inla.org/), save results and print results.
+contains code to load mildew data, set up models, estimate models with INLA, save results and print results.
 * `estimate.R`
 contains high level code to estimate all models.
+* `preprocess.R`
+contains high level code to preprocess the data so that it is useful for the analysis.
 * `reports.R`
 contains high level code to load all results and print reports.
 
@@ -33,7 +41,7 @@ Estimation
 
 With the current configuration, estimation may take up to 1 day per model in a powerful system.
 You may want to construct a mesh with less nodes by adjusting the mesh parameters
-`occ.mesh.params, col.mesh.params, ext.mesh.params` in `estimate.R` or use
+`occ.mesh.params`, `col.mesh.params`, `ext.mesh.params` in `estimate.R` or use
 a subset of the data for testing. Use the `plotMesh` method, e.g.
 ```r
 occ$plotMesh()
