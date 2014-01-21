@@ -55,6 +55,7 @@ OccupancyMildew <- setRefClass(
     
     # Imputation by k nearest neighbors regressiong using Gower's distance to allow categorical and ordered variables
     impute = function(k=30, aggregation.function=median, distance.metric="gower", exclude.distance.columns=NULL, exclude.imputation.columns=NULL) {
+      require(plyr)
       require(StatMatch)
       aggregation.function <- match.fun(aggregation.function)
       
