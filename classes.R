@@ -99,7 +99,7 @@ OccupancyMildew <- setRefClass(
           }
         }
         return(data.row)
-      }, k.seq=k.seq, data=data, distance.columns=distance.columns, imputation.columns=imputation.columns, .parallel=F)
+      }, k.seq=k.seq, data=data, distance.columns=distance.columns, imputation.columns=imputation.columns, .parallel=runParallel)
 
       return(.self)
     },
