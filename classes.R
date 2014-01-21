@@ -59,7 +59,6 @@ OccupancyMildew <- setRefClass(
     # are the columns to be imputed.
     impute = function(k=50, aggregation.function=median, distance.metric="gower", exclude.distance.columns=NULL, exclude.imputation.columns=NULL) {
       require(plyr)
-      require(StatMatch)
       
       aggregation.function <- match.fun(aggregation.function)
       distance.columns <- !(colnames(data) %in% exclude.distance.columns)
@@ -105,7 +104,8 @@ OccupancyMildew <- setRefClass(
           }
         }
         return(data.row)
-      }, k.seq=k.seq, data=data, distance.columns=distance.columns, imputation.columns=imputation.columns, .parallel=runParallel)
+      }, k.seq=k.seq, data=data, distance.columns=distance.columns, imputation.columns=imputation.columns,
+        .parallel=runParallel, .paropts=list(.packages="StatMatch"))
 
       missing.data.proportion.after <- sum(!complete.cases(data[,imputation.columns])) / nrow(data)
       message(round(missing.data.proportion.after*100), "% of rows still have missing data.")
