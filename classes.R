@@ -93,11 +93,11 @@ OccupancyMildew <- setRefClass(
             warning("Could not impute missing value on row = ", row, ", column = ", missing.column, ": all neighboring values are NA. Consider increasing k and/or iterating the imputation several times.")
           }
           else {
-            #message("row = ", row, ", column = ", names(data.imputed)[missing.column], " (", missing.column, "), column.class = ", paste(class(data.row[imputation.columns][,missing.column]), collapse=" "), ", imputed.value = ", imputed.value, " from values = ", paste(neighbor.values, collapse=" "), " from rows = ", paste(nearest.neighbor.rows, collapse=","))
+            #message("row = ", row, ", column = ", names(data.imputed)[missing.column], " (", missing.column, "), column.class = ", paste(class(data.imputed[,missing.column]), collapse=" "), ", imputed.value = ", imputed.value, " from values = ", paste(neighbor.values, collapse=" "), " from rows = ", paste(nearest.neighbor.rows, collapse=","))
             data.row[imputation.columns][missing.column] <-
-              switch(class(data.row[imputation.columns][,missing.column])[1],
-                ordered = levels(data.row[imputation.columns][,missing.column])[round(imputed.value)],
-                factor = levels(data.row[imputation.columns][,missing.column])[round(imputed.value)],
+              switch(class(data.imputed[,missing.column])[1],
+                ordered = levels(data.imputed[missing.column])[round(imputed.value)],
+                factor = levels(data.imputed[missing.column])[round(imputed.value)],
                 logical = as.logical(imputed.value),
                 numeric = imputed.value,
                 integer = as.integer(imputed.value),
