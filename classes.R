@@ -53,18 +53,22 @@ OccupancyMildew <- setRefClass(
       return(.self)
     },
     
-    # Imputation by k nearest neighbors regressiong using Gower's distance to allow categorical and ordered variables
-    impute = function(k=30, aggregation.function=median, distance.metric="gower", exclude.distance.columns=NULL, exclude.imputation.columns=NULL) {
+    # Imputation by k-nearest neighbors regression using Gower's distance that allows inclusion
+    # of unordered and ordered categorical variables as well.
+    # Distance columns are the columns used for dissimilarity calculation and imputation columns
+    # are the columns to be imputed.
+    impute = function(k=50, aggregation.function=median, distance.metric="gower", exclude.distance.columns=NULL, exclude.imputation.columns=NULL) {
       require(plyr)
       require(StatMatch)
+      
       aggregation.function <- match.fun(aggregation.function)
-      
-      message("Imputing...")
-      
       distance.columns <- !(colnames(data) %in% exclude.distance.columns)
       imputation.columns <- !(colnames(data) %in% exclude.imputation.columns)
       k.seq <- 2:(k+1)
       
+      message(round(sum(!complete.cases(data[,imputation.columns])) / nrow(data)*100), "% of rows have missing data.")      
+      message("Imputing...")
+            
       data <<- adply(data, 1, function(data.row, k.seq, data, distance.columns, imputation.columns) {
         if (all(complete.cases(data.row))) return(data.row)
         
@@ -89,9 +93,10 @@ OccupancyMildew <- setRefClass(
             warning("Could not impute missing value on row = ", row, ", column = ", missing.column, ": all neighboring values are NA. Consider increasing k and/or iterating the imputation several times.")
           }
           else {
-            #message("row = ", row, ", column = ", names(data.imputed)[missing.column], " (", missing.column, "), column.class = ", class(data.row[imputation.columns][,missing.column]), ", imputed.value = ", imputed.value, " from values = ", paste(neighbor.values, collapse=" "))
+            message("row = ", row, ", column = ", names(data.imputed)[missing.column], " (", missing.column, "), column.class = ", paste(class(data.row[imputation.columns][,missing.column]), collapse=" "), ", imputed.value = ", imputed.value, " from values = ", paste(neighbor.values, collapse=" "))
             data.row[imputation.columns][missing.column] <-
-              switch(class(data.row[imputation.columns][,missing.column]),
+              switch(class(data.row[imputation.columns][,missing.column])[1],
+                ordered = round(imputed.value),
                 factor = round(imputed.value),
                 logical = as.logical(imputed.value),
                 numeric = imputed.value,
