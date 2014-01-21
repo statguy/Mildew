@@ -29,7 +29,7 @@ OccupancyMildew <- setRefClass(
   methods = list(
     initialize = function(runParallel=FALSE, response="occupancy", ...) {
       callSuper(response=response, runParallel=runParallel, ...)
-      return(.self)
+      invisible(.self)
     },
 
     mergeRainfall = function(mildew, rainfallFile="W_uni.csv") {
@@ -50,7 +50,7 @@ OccupancyMildew <- setRefClass(
       mildew$varjoisuus[mildew$varjoisuus == 0] <- NA
       
       data <<- mildew
-      return(.self)
+      invisible(.self)
     },
     
     # Imputation by k-nearest neighbors regression using Gower's distance that allows inclusion
@@ -69,12 +69,11 @@ OccupancyMildew <- setRefClass(
       missing.data.proportion.before <- sum(!complete.cases(data[,imputation.columns])) / nrow(data)
       message(round(missing.data.proportion.before*100), "% of rows have missing data.")      
       message("Imputing...")
-            
-      data <<- adply(data, 1, function(data.row, k.seq, data, distance.columns, imputation.columns) {
-        if (all(complete.cases(data.row))) return(data.row)
-        
-        data.distance <- data.row[distance.columns]
+      
+      data <<- adply(data, 1, function(data.row, k.seq, data, distance.columns, imputation.columns) {        
         data.imputed <- data.row[imputation.columns]
+        if (all(complete.cases(data.imputed))) return(data.row)  
+        data.distance <- data.row[distance.columns]
         
         row <- rownames(data.row)
         message("Processing data row ", row, " / ", nrow(data), "...")
@@ -86,7 +85,7 @@ OccupancyMildew <- setRefClass(
         missing.columns <- which(is.na(data.imputed))
         for (missing.column.index in 1:length(missing.columns)) {
           missing.column <- missing.columns[missing.column.index]  
-          
+
           neighbor.values <- as.numeric(data[nearest.neighbor.rows, imputation.columns][,missing.column])
           imputed.value <- aggregation.function(neighbor.values, na.rm=TRUE)
 
@@ -94,11 +93,11 @@ OccupancyMildew <- setRefClass(
             warning("Could not impute missing value on row = ", row, ", column = ", missing.column, ": all neighboring values are NA. Consider increasing k and/or iterating the imputation several times.")
           }
           else {
-            #message("row = ", row, ", column = ", names(data.imputed)[missing.column], " (", missing.column, "), column.class = ", paste(class(data.row[imputation.columns][,missing.column]), collapse=" "), ", imputed.value = ", imputed.value, " from values = ", paste(neighbor.values, collapse=" "))
+            #message("row = ", row, ", column = ", names(data.imputed)[missing.column], " (", missing.column, "), column.class = ", paste(class(data.row[imputation.columns][,missing.column]), collapse=" "), ", imputed.value = ", imputed.value, " from values = ", paste(neighbor.values, collapse=" "), " from rows = ", paste(nearest.neighbor.rows, collapse=","))
             data.row[imputation.columns][missing.column] <-
               switch(class(data.row[imputation.columns][,missing.column])[1],
-                ordered = round(imputed.value),
-                factor = round(imputed.value),
+                ordered = levels(data.row[imputation.columns][,missing.column])[round(imputed.value)],
+                factor = levels(data.row[imputation.columns][,missing.column])[round(imputed.value)],
                 logical = as.logical(imputed.value),
                 numeric = imputed.value,
                 integer = as.integer(imputed.value),
@@ -113,7 +112,7 @@ OccupancyMildew <- setRefClass(
       
       invisible(.self)
     },
-    
+        
     getDataFileName = function() {
       return(file.path(basePath, paste("MildewData-", response, ".RData", sep="")))
     },
@@ -124,7 +123,7 @@ OccupancyMildew <- setRefClass(
     
     loadData = function() {
       load(getDataFileName(), envir=as.environment(.self))
-      return(.self)
+      invisible(.self)
     },
     
     connectivity = function(z1, z2, area, alpha, occurrence=1) {
@@ -151,7 +150,7 @@ OccupancyMildew <- setRefClass(
       y <- merge(data, x[,c("ID","S")], by="ID", sort=F)
       data <<- y
       
-      return(.self)
+      invisible(.self)
     },
     
     getPersistence = function() {
@@ -213,7 +212,7 @@ OccupancyMildew <- setRefClass(
       y <- merge(data, x[,c("ID","Year","Smildew","Smildew_pers")], by=c("ID","Year"))      
       data <<- y
       
-      return(.self)
+      invisible(.self)
     },
     
     reid = function(id) {
@@ -316,7 +315,7 @@ OccupancyMildew <- setRefClass(
       }
       else stop("Unknown model '", type, "'.")
       
-      return(.self)
+      invisible(.self)
     },
     
     invlogit = function(x) exp(x)/(1+exp(x)),
@@ -505,7 +504,7 @@ ColonizationMildew <- setRefClass(
   methods = list(
     initialize = function(...) {
       callSuper(response="colonization", ...)
-      return(.self)
+      invisible(.self)
     },
     
     loadRawData = function(mildewFile="SO_col_univariate_2001_2012.csv") {
@@ -520,7 +519,7 @@ ColonizationMildew <- setRefClass(
       mildew$varjoisuus[mildew$varjoisuus == 0] <- NA
       
       data <<- mildew
-      return(.self)
+      invisible(.self)
     }
   )
 )
@@ -533,7 +532,7 @@ ExtinctionMildew <- setRefClass(
   methods = list(
     initialize = function(...) {
       callSuper(response="extinction", ...)
-      return(.self)
+      invisible(.self)
     },
     
     loadRawData = function(mildewFile="SO_ext_univariate_2001_2012.csv") {
@@ -548,7 +547,7 @@ ExtinctionMildew <- setRefClass(
       mildew$varjoisuus[mildew$varjoisuus == 0] <- NA
             
       data <<- mildew
-      return(.self)
+      invisible(.self)
     }
   )
 )
