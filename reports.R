@@ -28,3 +28,8 @@ summaryResult(occ, col, ext, type="spatialonly")
 summaryResult(occ, col, ext, type="temporalreplicate")
 summaryResult(occ, col, ext, type="spatialreplicate")
 summaryResult(occ, col, ext, type="spatiotemporal")
+
+
+if (runParallel) {
+  cluster$finalize()
+}
