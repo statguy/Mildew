@@ -66,7 +66,8 @@ OccupancyMildew <- setRefClass(
       imputation.columns <- !(colnames(data) %in% exclude.imputation.columns)
       k.seq <- 2:(k+1)
       
-      message(round(sum(!complete.cases(data[,imputation.columns])) / nrow(data)*100), "% of rows have missing data.")      
+      missing.data.proportion.before <- sum(!complete.cases(data[,imputation.columns])) / nrow(data)
+      message(round(missing.data.proportion.before*100), "% of rows have missing data.")      
       message("Imputing...")
             
       data <<- adply(data, 1, function(data.row, k.seq, data, distance.columns, imputation.columns) {
@@ -93,7 +94,7 @@ OccupancyMildew <- setRefClass(
             warning("Could not impute missing value on row = ", row, ", column = ", missing.column, ": all neighboring values are NA. Consider increasing k and/or iterating the imputation several times.")
           }
           else {
-            message("row = ", row, ", column = ", names(data.imputed)[missing.column], " (", missing.column, "), column.class = ", paste(class(data.row[imputation.columns][,missing.column]), collapse=" "), ", imputed.value = ", imputed.value, " from values = ", paste(neighbor.values, collapse=" "))
+            #message("row = ", row, ", column = ", names(data.imputed)[missing.column], " (", missing.column, "), column.class = ", paste(class(data.row[imputation.columns][,missing.column]), collapse=" "), ", imputed.value = ", imputed.value, " from values = ", paste(neighbor.values, collapse=" "))
             data.row[imputation.columns][missing.column] <-
               switch(class(data.row[imputation.columns][,missing.column])[1],
                 ordered = round(imputed.value),
@@ -107,7 +108,10 @@ OccupancyMildew <- setRefClass(
         return(data.row)
       }, k.seq=k.seq, data=data, distance.columns=distance.columns, imputation.columns=imputation.columns, .parallel=runParallel)
 
-      return(.self)
+      missing.data.proportion.after <- sum(!complete.cases(data[,imputation.columns])) / nrow(data)
+      message(round(missing.data.proportion.after*100), "% of rows still have missing data.")
+      
+      invisible(.self)
     },
     
     getDataFileName = function() {
