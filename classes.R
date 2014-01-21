@@ -4,7 +4,6 @@ setOldClass("inla.spde2")
 setOldClass("inla.data.stack")
 setOldClass("inla")
 
-
 OccupancyMildew <- setRefClass(
   "OccupancyMildew",
   fields = list(
@@ -43,7 +42,7 @@ OccupancyMildew <- setRefClass(
       message("Loading ", response, " data...")
       
       mildew <- read.csv(file.path(basePath, mildewFile))
-      mildew <- transform(mildew, y=as.logical(PA), road_PA=as.logical(road_PA), Open_bin=as.logical(Open_bin), varjoisuus=factor(varjoisuus),
+      mildew <- transform(mildew, y=as.logical(PA), road_PA=as.logical(road_PA), Open_bin=as.logical(Open_bin), varjoisuus=as.ordered(varjoisuus),
                           fallPLM2=fallPLM2, Distance_to_shore=Distance_to_shore, fallPLdry=fallPLdry,
                           logfallPLM2=log(fallPLM2), logDistance_to_shore=log(Distance_to_shore), S=S)
       mildew <- mergeRainfall(mildew)
@@ -54,58 +53,54 @@ OccupancyMildew <- setRefClass(
       return(.self)
     },
     
-    # Imputation by k nearest neighbors regressiong using Gower's distance to allow categorical variables
-    impute = function(k=10, aggregation.function=median, distance.metric="gower", exclude.distance.columns=NULL, exclude.imputation.columns=NULL) {
-      require(cluster)
+    # Imputation by k nearest neighbors regressiong using Gower's distance to allow categorical and ordered variables
+    impute = function(k=30, aggregation.function=median, distance.metric="gower", exclude.distance.columns=NULL, exclude.imputation.columns=NULL) {
+      require(StatMatch)
       aggregation.function <- match.fun(aggregation.function)
       
-      data.distance <- data[, !(colnames(data) %in% exclude.distance.columns), drop=FALSE]
-      data.imputed <- data[, !(colnames(data) %in% exclude.imputation.columns), drop=FALSE]
-      data.numeric <- data.matrix(data.imputed)
-      
-      message("Calculating distances for imputation...")
-      distance.lookup <- daisy(data.distance, metric=distance.metric)
-      #distance.lookup <- as.matrix(daisy(data.distance, metric=distance.metric))
-            
-      nrows <- attr(distance.lookup, "Size")
-      getDistIndex <- function(row, column) nrows*(row-1) - row*(row-1)/2 + column-row
-      getDistRowValues <- function(row) {
-        i <- if (row==1) getDistIndex(row, 2:n)
-        else if (row==n) getDistIndex(1:(nrows-1), row)
-        else c(getDistIndex(1:(row-1), row), getDistIndex(row, (row+1):nrows))
-        distance.values <- distance.lookup[i]
-        names(distance.values) <- attr(distance.lookup, "Labels")[(1:nrows)[-row]]
-        return(distance.values)
-      }
-      
       message("Imputing...")
-      k.seq <- 1:k
-      #k.seq <- 2:(k+1)
-      missing.rows <- which(!complete.cases(data.numeric))
-      for (missing.row in missing.rows) {
-        distance.values <- getDistRowValues(missing.row)
+      
+      distance.columns <- !(colnames(data) %in% exclude.distance.columns)
+      imputation.columns <- !(colnames(data) %in% exclude.imputation.columns)
+      k.seq <- 2:(k+1)
+      
+      data <<- adply(data, 1, function(data.row, k.seq, data, distance.columns, imputation.columns) {
+        if (all(complete.cases(data.row))) return(data.row)
+        
+        data.distance <- data.row[distance.columns]
+        data.imputed <- data.row[imputation.columns]
+        
+        row <- rownames(data.row)
+        message("Processing data row ", row, " / ", nrow(data), "...")
+        
+        distance.values <- as.vector(gower.dist(data[, distance.columns], data.distance))
+        names(distance.values) <- rownames(data)
         nearest.neighbor.rows <- names(distance.values[order(distance.values)][k.seq])
-        #nearest.neighbor.rows <- names(distance.lookup[missing.row, order(distance.lookup[missing.row,])[k.seq]])
-        missing.columns <- which(is.na(data.numeric[missing.row,]))        
+        
+        missing.columns <- which(is.na(data.imputed))
         for (missing.column.index in 1:length(missing.columns)) {
-          missing.column <- missing.columns[missing.column.index]
-          neighbor.values <- data.numeric[nearest.neighbor.rows, missing.column]
+          missing.column <- missing.columns[missing.column.index]  
+          
+          neighbor.values <- as.numeric(data[nearest.neighbor.rows, imputation.columns][,missing.column])
           imputed.value <- aggregation.function(neighbor.values, na.rm=TRUE)
+
           if (is.na(imputed.value)) {
-            warning("Could not impute missing value on row = ", missing.row, ", column = ", missing.column, ": all neighboring values are NA. Consider increasing k or iterating the imputation several times.")
+            warning("Could not impute missing value on row = ", row, ", column = ", missing.column, ": all neighboring values are NA. Consider increasing k and/or iterating the imputation several times.")
           }
           else {
-            #message("row = ", missing.row, ", column = ", missing.column, ", column.class = ", class(data.imputed[, missing.column]), ", imputed.value = ", imputed.value, " from values = ", paste(neighbor.values, collapse=" "))
-            data.imputed[missing.row, missing.column] <- switch(class(data.imputed[, missing.column]),
-              factor = round(imputed.value),
-              logical = as.logical(imputed.value),
-              numeric = imputed.value,
-              integer = as.integer(imputed.value))
+            #message("row = ", row, ", column = ", names(data.imputed)[missing.column], " (", missing.column, "), column.class = ", class(data.row[imputation.columns][,missing.column]), ", imputed.value = ", imputed.value, " from values = ", paste(neighbor.values, collapse=" "))
+            data.row[imputation.columns][missing.column] <-
+              switch(class(data.row[imputation.columns][,missing.column]),
+                factor = round(imputed.value),
+                logical = as.logical(imputed.value),
+                numeric = imputed.value,
+                integer = as.integer(imputed.value),
+                stop("Unsupported data type."))
           }
         }
-      }
-      
-      data <<- cbind(data[, colnames(data) %in% exclude.imputation.columns, drop=F], data.imputed)[, colnames(data)]
+        return(data.row)
+      }, k.seq=k.seq, data=data, distance.columns=distance.columns, imputation.columns=imputation.columns, .parallel=F)
+
       return(.self)
     },
     
@@ -507,7 +502,7 @@ ColonizationMildew <- setRefClass(
       message("Loading ", response, " data...")
       
       mildew <- read.csv(file.path(basePath, mildewFile))
-      mildew <- transform(mildew, y=as.logical(Col), road_PA=as.logical(road_PA), Open_bin=as.logical(Open_bin), varjoisuus=factor(varjoisuus),
+      mildew <- transform(mildew, y=as.logical(Col), road_PA=as.logical(road_PA), Open_bin=as.logical(Open_bin), varjoisuus=as.ordered(varjoisuus),
                           fallPLM2=fallPLM2, Distance_to_shore=Distance_to_shore, fallPLdry=fallPLdry,
                           logfallPLM2=log(fallPLM2), logDistance_to_shore=log(Distance_to_shore), S=S)
       mildew <- mergeRainfall(mildew)
@@ -535,7 +530,7 @@ ExtinctionMildew <- setRefClass(
       message("Loading ", response, " data...")
       
       mildew <- read.csv(file.path(basePath, mildewFile))
-      mildew <- transform(mildew, y=as.logical(Ext), road_PA=as.logical(road_PA), Open_bin=as.logical(Open_bin), varjoisuus=factor(varjoisuus),
+      mildew <- transform(mildew, y=as.logical(Ext), road_PA=as.logical(road_PA), Open_bin=as.logical(Open_bin), varjoisuus=as.ordered(varjoisuus),
                           fallPLM2=fallPLM2, Distance_to_shore=Distance_to_shore, fallPLdry=fallPLdry,
                           logfallPLM2=log(fallPLM2), logDistance_to_shore=log(Distance_to_shore), S=S)
       mildew <- mergeRainfall(mildew)
