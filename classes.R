@@ -101,7 +101,7 @@ OccupancyMildew <- setRefClass(
                 logical = as.logical(round(imputed.value)),
                 numeric = imputed.value,
                 integer = as.integer(round(imputed.value)),
-                stop("Unsupported data type = ", paste(class(data.imputed[,missing.column]), collapse=" "))
+                stop("Unsupported data type = ", paste(class(data.imputed[,missing.column]), collapse=" ")))
           }
         }
         return(data.row)
