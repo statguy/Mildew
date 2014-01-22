@@ -121,6 +121,7 @@ OccupancyMildew <- setRefClass(
     
     saveData = function() {
       save(data, file=getDataFileName())
+      invisible(.self)
     },
     
     loadData = function() {
