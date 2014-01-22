@@ -67,7 +67,7 @@ OccupancyMildew <- setRefClass(
       k.seq <- 2:(k+1)
       
       missing.data.proportion.before <- sum(!complete.cases(data[,imputation.columns])) / nrow(data)
-      message(round(missing.data.proportion.before*100), "% of rows have missing data.")      
+      message(round(missing.data.proportion.before*100, 3), "% of rows have missing data.")      
       message("Imputing...")
       
       data <<- adply(data, 1, function(data.row, k.seq, data, distance.columns, imputation.columns) {
@@ -101,7 +101,7 @@ OccupancyMildew <- setRefClass(
                 logical = as.logical(round(imputed.value)),
                 numeric = imputed.value,
                 integer = as.integer(round(imputed.value)),
-                stop("Unsupported data type."))
+                stop("Unsupported data type = ", paste(class(data.imputed[,missing.column]), collapse=" "))
           }
         }
         return(data.row)
@@ -109,7 +109,7 @@ OccupancyMildew <- setRefClass(
         .parallel=runParallel, .paropts=list(.packages="StatMatch"))
 
       missing.data.proportion.after <- sum(!complete.cases(data[,imputation.columns])) / nrow(data)
-      message(round(missing.data.proportion.after*100), "% of rows still have missing data.")
+      message(round(missing.data.proportion.after*100, 3), "% of rows still have missing data.")
       
       invisible(.self)
     },
