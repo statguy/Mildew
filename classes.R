@@ -94,14 +94,15 @@ OccupancyMildew <- setRefClass(
           }
           else {
             #message("row = ", row, ", column = ", names(data.imputed)[missing.column], " (", missing.column, "), column.class = ", paste(class(data.imputed[,missing.column]), collapse=" "), ", imputed.value = ", imputed.value, " from values = ", paste(neighbor.values, collapse=" "), " from rows = ", paste(nearest.neighbor.rows, collapse=","))
+            missing.column.class <- class(data.imputed[,missing.column])[1]
             data.row[imputation.columns][missing.column] <-
-              switch(class(data.imputed[,missing.column])[1],
-                ordered = levels(data.imputed[,missing.column])[round(imputed.value)],
-                factor = levels(data.imputed[,missing.column])[round(imputed.value)],
+              switch(missing.column.class,
+                ordered = as.ordered(levels(data.imputed[,missing.column])[round(imputed.value)]),
+                factor = as.factor(levels(data.imputed[,missing.column])[round(imputed.value)]),
                 logical = as.logical(round(imputed.value)),
                 numeric = imputed.value,
                 integer = as.integer(round(imputed.value)),
-                stop("Unsupported data type = ", paste(class(data.imputed[,missing.column]), collapse=" ")))
+                stop("Unsupported data type = ", missing.column.class)
           }
         }
         return(data.row)
