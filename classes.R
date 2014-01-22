@@ -70,7 +70,7 @@ OccupancyMildew <- setRefClass(
       message(round(missing.data.proportion.before*100), "% of rows have missing data.")      
       message("Imputing...")
       
-      data <<- adply(data, 1, function(data.row, k.seq, data, distance.columns, imputation.columns) {        
+      data <<- adply(data, 1, function(data.row, k.seq, data, distance.columns, imputation.columns) {
         data.imputed <- data.row[imputation.columns]
         if (all(complete.cases(data.imputed))) return(data.row)  
         data.distance <- data.row[distance.columns]
@@ -96,11 +96,11 @@ OccupancyMildew <- setRefClass(
             #message("row = ", row, ", column = ", names(data.imputed)[missing.column], " (", missing.column, "), column.class = ", paste(class(data.imputed[,missing.column]), collapse=" "), ", imputed.value = ", imputed.value, " from values = ", paste(neighbor.values, collapse=" "), " from rows = ", paste(nearest.neighbor.rows, collapse=","))
             data.row[imputation.columns][missing.column] <-
               switch(class(data.imputed[,missing.column])[1],
-                ordered = levels(data.imputed[missing.column])[round(imputed.value)],
-                factor = levels(data.imputed[missing.column])[round(imputed.value)],
-                logical = as.logical(imputed.value),
+                ordered = levels(data.imputed[,missing.column])[round(imputed.value)],
+                factor = levels(data.imputed[,missing.column])[round(imputed.value)],
+                logical = as.logical(round(imputed.value)),
                 numeric = imputed.value,
-                integer = as.integer(imputed.value),
+                integer = as.integer(round(imputed.value)),
                 stop("Unsupported data type."))
           }
         }
