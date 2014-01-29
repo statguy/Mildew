@@ -14,8 +14,9 @@ source("https://raw.github.com/statguy/R-Mildew/master/process/setup.R")
 
 Code files
 ----------
-In the Mildew package installation directory (which is shown by the command `path.package("Mildew")`), you find
-the following files to preprocess, estimate and report results for the mildew data:
+In the subdirectory `process` of the Mildew package installation directory
+(which is shown by the command `path.package("Mildew")`), you can find the following files to
+preprocess, estimate and report results for the mildew data:
 * `preprocess.R`
 contains high-level code to preprocess the data so that it is useful for the analysis.
 * `estimate.R`
