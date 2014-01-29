@@ -59,8 +59,8 @@ task61 <- function() estimateRandomEffectModel(occ, connectivity.scale=occ.conne
 task62 <- function() estimateRandomEffectModel(col, connectivity.scale=col.connectivity.scale, fixed.effects=col.fixed.effects, mesh.params=col.mesh.params, type="spatiotemporal")
 task63 <- function() estimateRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects, mesh.params=ext.mesh.params, type="spatiotemporal")
 
-cnpClusterStartRemote(runParallel=runParallel, hosts=cnpClusterGetHostsUkko(maxNodes=6*3))
-cnpClusterEval(library(Mildew))
+cnpClusterStartRemote(runParallel=runParallel, hosts=cnpClusterGetHostsUkko(maxNodes=6*3), outFile=file.path(basePath, "estimate.log"))
+cnpClusterEval({library(Mildew); library(INLA) })
 cnpClusterExport(c("occ", "col", "ext",
                    "occ.mesh.params", "col.mesh.params", "ext.mesh.params",
                    "occ.connectivity.scale", "col.connectivity.scale", "ext.connectivity.scale",
@@ -72,4 +72,4 @@ x <- cnpClusterApplyIndependent(task11, task12, task13,
                                 task41, task42, task43,
                                 task51, task52, task53,
                                 task61, task62, task63)
-cnpClusterStopLocal()
+cnpClusterStopRemote()

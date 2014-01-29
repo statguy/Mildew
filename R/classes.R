@@ -161,7 +161,7 @@ OccupancyMildew <- setRefClass(
             
       occupancy <- if (class(.self) == "OccupancyMildew") .self
       else {
-        x <- OccupancyMildew(basePath=basePath, runParallel=runParallel)
+        x <- OccupancyMildew$new(basePath=basePath, runParallel=runParallel)
         x$loadData()
         x
       }
