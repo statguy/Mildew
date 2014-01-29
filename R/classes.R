@@ -125,7 +125,8 @@ OccupancyMildew <- setRefClass(
     },
     
     loadData = function() {
-      load(getDataFileName(), envir=as.environment(.self))      
+      load(getDataFileName(), envir=as.environment(.self))
+      data$varjoisuus <<- data$varjoisuus[drop=T] # TODO: move to preprocess/imputation
       invisible(.self)
     },
     

@@ -12,8 +12,10 @@ ext.mesh.params <- list(min.angle=20, max.edge=c(2800,10000), cutoff=1000, coord
 occ.connectivity.scale <- 2000
 col.connectivity.scale <- 2000
 ext.connectivity.scale <- 1000
-occ.fixed.effects <- "fallPLM2 + S + road_PA + varjoisuus2 + varjoisuus3 + Rainfall_August"
-col.fixed.effects <- "fallPLM2 + S + Smildew_pers + road_PA + varjoisuus2 + varjoisuus3 + Rainfall_August"
+#occ.fixed.effects <- "fallPLM2 + S + road_PA + varjoisuus2 + varjoisuus3 + Rainfall_August"
+occ.fixed.effects <- "fallPLM2 + S + road_PA + varjoisuus.L + varjoisuus.Q + Rainfall_August"
+#col.fixed.effects <- "fallPLM2 + S + Smildew_pers + road_PA + varjoisuus2 + varjoisuus3 + Rainfall_August"
+col.fixed.effects <- "fallPLM2 + S + Smildew_pers + road_PA + varjoisuus.L + varjoisuus.Q + Rainfall_August"
 ext.fixed.effects <- "fallPLM2 + S + Smildew + road_PA"
 
 estimateOrdinaryLogisticModel <- function(mildew, connectivity.scale, fixed.effects, tag="", type="glm") {
