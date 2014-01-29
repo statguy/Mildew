@@ -1,4 +1,3 @@
-library(INLA)
 setOldClass("inla.mesh")
 setOldClass("inla.spde2")
 setOldClass("inla.data.stack")
@@ -125,7 +124,7 @@ OccupancyMildew <- setRefClass(
     },
     
     loadData = function() {
-      load(getDataFileName(), envir=as.environment(.self))
+      load(getDataFileName(), envir=as.environment(.self))      
       invisible(.self)
     },
     
@@ -248,7 +247,7 @@ OccupancyMildew <- setRefClass(
         temporalonly="f(data$ID, model='iid', group=s.group, control.group=list(model='ar1'))",
         spatialreplicate="f(s, model=spde, replicate=s.repl)",
         temporalreplicate="f(data$ID, model='ar1', replicate=group.years)")
-      
+            
       if (missing(fixed.effects)) {
         model <<- as.formula(paste(c("y ~ -1 + intercept", random.effects), collapse=" + "))
         covariates <<- NULL
@@ -256,9 +255,12 @@ OccupancyMildew <- setRefClass(
       else {
         model <<- as.formula(paste(c("y ~ -1 + intercept", paste(fixed.effects, collapse=" + "), random.effects), collapse=" + "))
         #data$intercept <- 1
-        #covariates <<- as.data.frame(model.matrix(model, data=data[,names(data) != "y"], na.action=na.fail))
-        covariates <<- as.data.frame(model.matrix(~-1+., data=data[,names(data) != "y"], na.action=na.fail))
+        #covariates <<- as.data.frame(model.matrix(model, data=data[,!names(data) %in% c("y","PA","Col","Ext","persistent","logfallPLM2")], na.action=na.fail))
+        covariates <<- as.data.frame(model.matrix(~-1+., data=data[,!names(data) %in% c("y","PA","Col","Ext","persistent","logfallPLM2")], na.action=na.fail))
 
+        if (nrow(covariates) != nrow(data))
+          stop("Missing data (NAs) not allowed in covariates.")
+        
         if (scale.covariates) {
           require(arm)
           
