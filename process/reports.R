@@ -1,16 +1,6 @@
-source("classes.R")
+library(Mildew)
 
 basePath <- "~/phd/mildew/data" # Set your path to the data files here
-runParallel <- TRUE
-
-cluster <- NA
-if (runParallel) {
-  library(devtools)
-  source_url("https://raw.github.com/statguy/RSnippets/master/Cluster/Cluster.R")
-  cluster <- Cluster$new()
-  cluster$startLocalCluster()
-}
-
 
 occ <- OccupancyMildew$new(basePath=basePath, runParallel=runParallel)
 col <- ColonizationMildew$new(basePath=basePath, runParallel=runParallel)
@@ -28,8 +18,3 @@ summaryResult(occ, col, ext, type="spatialonly")
 summaryResult(occ, col, ext, type="temporalreplicate")
 summaryResult(occ, col, ext, type="spatialreplicate")
 summaryResult(occ, col, ext, type="spatiotemporal")
-
-
-if (runParallel) {
-  cluster$finalize()
-}

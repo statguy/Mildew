@@ -1,0 +1,11 @@
+Package: Mildew
+Type: Package
+Title: Mildew
+Version: 0.1
+Date: 2014-01-29
+Author: Jussi Jousimo
+Maintainer: Jussi Jousimo <jvj@iki.fi>
+Description: Mildew
+Imports: INLA,plyr,CNPCluster
+Suggests: StatMatch,arm,sp,maptools
+License: MIT

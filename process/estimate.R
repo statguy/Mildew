@@ -1,15 +1,9 @@
-source("classes.R")
+library(CNPCluster)
 
 basePath <- "~/phd/mildew/data" # Set your path to the data files here
 runParallel <- TRUE
 
-cluster <- NA
-if (runParallel) {
-  library(devtools)
-  source_url("https://raw.github.com/statguy/RSnippets/master/Cluster/Cluster.R")
-  cluster <- Cluster$new()
-  cluster$startLocalCluster()
-}
+cnpClusterStartLocal(runParallel=runParallel)
 
 occ <- OccupancyMildew$new(basePath=basePath, runParallel=runParallel)$loadData()
 col <- ColonizationMildew$new(basePath=basePath, runParallel=runParallel)$loadData()
@@ -67,7 +61,4 @@ estimateRandomEffectModel(occ, connectivity.scale=occ.connectivity.scale, fixed.
 estimateRandomEffectModel(col, connectivity.scale=col.connectivity.scale, fixed.effects=col.fixed.effects, mesh.params=col.mesh.params, type="spatiotemporal")
 estimateRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects, mesh.params=ext.mesh.params, type="spatiotemporal")
 
-
-if (runParallel) {
-  cluster$finalize()
-}
+cnpClusterStopLocal()
