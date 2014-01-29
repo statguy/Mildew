@@ -3,8 +3,6 @@ library(CNPCluster)
 basePath <- "~/phd/mildew/data" # Set your path to the data files here
 runParallel <- TRUE
 
-cnpClusterStartLocal(runParallel=runParallel)
-
 occ <- OccupancyMildew$new(basePath=basePath, runParallel=runParallel)$loadData()
 col <- ColonizationMildew$new(basePath=basePath, runParallel=runParallel)$loadData()
 ext <- ExtinctionMildew$new(basePath=basePath, runParallel=runParallel)$loadData()
@@ -37,28 +35,41 @@ estimateRandomEffectModel <- function(mildew, connectivity.scale, fixed.effects,
   mildew$estimate(tag=tag, saveToFile=TRUE)
 }
 
-estimateOrdinaryLogisticModel(occ, connectivity.scale=occ.connectivity.scale, fixed.effects=occ.fixed.effects)
-estimateOrdinaryLogisticModel(col, connectivity.scale=col.connectivity.scale, fixed.effects=col.fixed.effects)
-estimateOrdinaryLogisticModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects)
+task11 <- function() estimateOrdinaryLogisticModel(occ, connectivity.scale=occ.connectivity.scale, fixed.effects=occ.fixed.effects)
+task12 <- function() estimateOrdinaryLogisticModel(col, connectivity.scale=col.connectivity.scale, fixed.effects=col.fixed.effects)
+task13 <- function() estimateOrdinaryLogisticModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects)
 
-estimateInterceptOnlyRandomEffectModel(occ, connectivity.scale=occ.connectivity.scale, mesh.params=occ.mesh.params, type="spatiotemporal")
-estimateInterceptOnlyRandomEffectModel(col, connectivity.scale=col.connectivity.scale, mesh.params=col.mesh.params, type="spatiotemporal")
-estimateInterceptOnlyRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, mesh.params=ext.mesh.params, type="spatiotemporal")
+task21 <- function() estimateInterceptOnlyRandomEffectModel(occ, connectivity.scale=occ.connectivity.scale, mesh.params=occ.mesh.params, type="spatiotemporal")
+task22 <- function() estimateInterceptOnlyRandomEffectModel(col, connectivity.scale=col.connectivity.scale, mesh.params=col.mesh.params, type="spatiotemporal")
+task23 <- function() estimateInterceptOnlyRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, mesh.params=ext.mesh.params, type="spatiotemporal")
 
-estimateRandomEffectModel(occ, connectivity.scale=occ.connectivity.scale, fixed.effects=occ.fixed.effects, mesh.params=occ.mesh.params, type="spatialonly")
-estimateRandomEffectModel(col, connectivity.scale=col.connectivity.scale, fixed.effects=col.fixed.effects, mesh.params=col.mesh.params, type="spatialonly")
-estimateRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects, mesh.params=ext.mesh.params, type="spatialonly")
+task31 <- function() estimateRandomEffectModel(occ, connectivity.scale=occ.connectivity.scale, fixed.effects=occ.fixed.effects, mesh.params=occ.mesh.params, type="spatialonly")
+task32 <- function() estimateRandomEffectModel(col, connectivity.scale=col.connectivity.scale, fixed.effects=col.fixed.effects, mesh.params=col.mesh.params, type="spatialonly")
+task33 <- function() estimateRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects, mesh.params=ext.mesh.params, type="spatialonly")
 
-estimateRandomEffectModel(occ, connectivity.scale=occ.connectivity.scale, fixed.effects=occ.fixed.effects, mesh.params=occ.mesh.params, type="temporalreplicate")
-estimateRandomEffectModel(col, connectivity.scale=col.connectivity.scale, fixed.effects=col.fixed.effects, mesh.params=col.mesh.params, type="temporalreplicate")
-estimateRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects, mesh.params=ext.mesh.params, type="temporalreplicate")
+task41 <- function() estimateRandomEffectModel(occ, connectivity.scale=occ.connectivity.scale, fixed.effects=occ.fixed.effects, mesh.params=occ.mesh.params, type="temporalreplicate")
+task42 <- function() estimateRandomEffectModel(col, connectivity.scale=col.connectivity.scale, fixed.effects=col.fixed.effects, mesh.params=col.mesh.params, type="temporalreplicate")
+task43 <- function() estimateRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects, mesh.params=ext.mesh.params, type="temporalreplicate")
 
-estimateRandomEffectModel(occ, connectivity.scale=occ.connectivity.scale, fixed.effects=occ.fixed.effects, mesh.params=occ.mesh.params, type="spatialreplicate")
-estimateRandomEffectModel(col, connectivity.scale=col.connectivity.scale, fixed.effects=col.fixed.effects, mesh.params=col.mesh.params, type="spatialreplicate")
-estimateRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects, mesh.params=ext.mesh.params, type="spatialreplicate")
+task51 <- function() estimateRandomEffectModel(occ, connectivity.scale=occ.connectivity.scale, fixed.effects=occ.fixed.effects, mesh.params=occ.mesh.params, type="spatialreplicate")
+task52 <- function() estimateRandomEffectModel(col, connectivity.scale=col.connectivity.scale, fixed.effects=col.fixed.effects, mesh.params=col.mesh.params, type="spatialreplicate")
+task53 <- function() estimateRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects, mesh.params=ext.mesh.params, type="spatialreplicate")
 
-estimateRandomEffectModel(occ, connectivity.scale=occ.connectivity.scale, fixed.effects=occ.fixed.effects, mesh.params=occ.mesh.params, type="spatiotemporal")
-estimateRandomEffectModel(col, connectivity.scale=col.connectivity.scale, fixed.effects=col.fixed.effects, mesh.params=col.mesh.params, type="spatiotemporal")
-estimateRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects, mesh.params=ext.mesh.params, type="spatiotemporal")
+task61 <- function() estimateRandomEffectModel(occ, connectivity.scale=occ.connectivity.scale, fixed.effects=occ.fixed.effects, mesh.params=occ.mesh.params, type="spatiotemporal")
+task62 <- function() estimateRandomEffectModel(col, connectivity.scale=col.connectivity.scale, fixed.effects=col.fixed.effects, mesh.params=col.mesh.params, type="spatiotemporal")
+task63 <- function() estimateRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects, mesh.params=ext.mesh.params, type="spatiotemporal")
 
+cnpClusterStartRemote(runParallel=runParallel, hosts=cnpClusterGetHostsUkko(maxNodes=6*3))
+cnpClusterEval(library(Mildew))
+cnpClusterExport(c("occ", "col", "ext",
+                   "occ.mesh.params", "col.mesh.params", "ext.mesh.params",
+                   "occ.connectivity.scale", "col.connectivity.scale", "ext.connectivity.scale",
+                   "occ.fixed.effects", "col.fixed.effects", "ext.fixed.effects",
+                   "estimateOrdinaryLogisticModel", "estimateInterceptOnlyRandomEffectModel", "estimateRandomEffectModel"))
+x <- cnpClusterApplyIndependent(task11, task12, task13,
+                                task21, task22, task23,
+                                task31, task32, task33,
+                                task41, task42, task43,
+                                task51, task52, task53,
+                                task61, task62, task63)
 cnpClusterStopLocal()

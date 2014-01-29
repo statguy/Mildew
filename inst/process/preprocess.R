@@ -32,7 +32,7 @@ task2 <- function() {
     saveData()$
     impute(exclude.distance.columns=exclude.distance.columns, exclude.imputation.columns=exclude.imputation.columns)$
     saveData()
-return(invisible(col))
+  return(invisible(col))
 }
 
 task3 <- function() {
