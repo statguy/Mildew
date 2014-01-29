@@ -1,3 +1,4 @@
+library(INLA)
 setOldClass("inla.mesh")
 setOldClass("inla.spde2")
 setOldClass("inla.data.stack")
