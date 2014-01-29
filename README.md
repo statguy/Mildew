@@ -7,9 +7,10 @@ First install [R-INLA](http://www.r-inla.org/) testing version, which you can in
 ```r
 source("http://www.math.ntnu.no/inla/givemeINLA-testing.R")
 ```
-Then run Mildew setup script with the command
+Then run Mildew setup script with the commands
 ```r
-source("https://raw.github.com/statguy/R-Mildew/master/process/setup.R")
+library(devtools)
+source_url("https://raw.github.com/statguy/R-Mildew/master/inst/process/setup.R")
 ```    
 
 Code files
