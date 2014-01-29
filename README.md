@@ -11,7 +11,7 @@ Then run Mildew setup script with the commands
 ```r
 library(devtools)
 source_url("https://raw.github.com/statguy/R-Mildew/master/inst/process/setup.R")
-```    
+```
 
 Code files
 ----------
@@ -28,15 +28,22 @@ contains high-level code to load all results and print reports.
 Configuration
 -------------
 Set `basePath` in `preprocess.R`, `estimate.R` and `reports.R` to point to your mildew data directory.
-If you experience problems with parallel processing, set
+If you experience problems with parallel processing, set in these files
 ```r
 runParallel <- FALSE
 ```
 `preprocess.R` uses Ukko remote cluster for imputation. If you cannot access it, remove the cluster setup code.
 If you can use some other remote cluster, take a look at [R-Cluster](https://github.com/statguy/R-Cluster).
 
-Estimation
-----------
+Preprocessing, estimation, reporting
+------------------------------------
+You may run the code directly with
+```r
+source(file.path(path.package("Mildew"), "process", "preprocess.R"))
+source(file.path(path.package("Mildew"), "process", "estimate.R"))
+source(file.path(path.package("Mildew"), "process", "reports.R"))
+```
+
 With the current configuration, estimation may take up to 1 day per model in a powerful system.
 You may want to construct a mesh with less nodes by adjusting the mesh parameters
 `occ.mesh.params`, `col.mesh.params`, `ext.mesh.params` in `estimate.R` or use
