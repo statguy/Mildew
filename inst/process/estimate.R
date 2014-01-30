@@ -1,4 +1,5 @@
 library(CNPCluster)
+library(Mildew)
 
 basePath <- "~/phd/mildew/data" # Set your path to the data files here
 runParallel <- TRUE
@@ -62,8 +63,8 @@ task62 <- function() estimateRandomEffectModel(col, connectivity.scale=col.conne
 task63 <- function() estimateRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects, mesh.params=ext.mesh.params, type="spatiotemporal")
 
 cnpClusterStartRemote(runParallel=runParallel, hosts=cnpClusterGetHostsUkko(maxNodes=6*3), outFile=file.path(basePath, "estimate.log"))
-cnpClusterEval({ library(Mildew); library(INLA) })
-cnpClusterExport(c("occ", "col", "ext",
+cnpClusterEvalRemote({ library(Mildew); library(INLA) })
+cnpClusterExportRemote(c("occ", "col", "ext",
                    "occ.mesh.params", "col.mesh.params", "ext.mesh.params",
                    "occ.connectivity.scale", "col.connectivity.scale", "ext.connectivity.scale",
                    "occ.fixed.effects", "col.fixed.effects", "ext.fixed.effects",

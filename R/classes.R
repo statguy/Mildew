@@ -48,6 +48,7 @@ OccupancyMildew <- setRefClass(
       mildew <- mergeRainfall(mildew)
       mildew$fallPLdry[mildew$fallPLdry > 100] <- NA
       mildew$varjoisuus[mildew$varjoisuus == 0] <- NA
+      mildew$varjoisuus <- mildew$varjoisuus[drop=T]
       
       data <<- mildew
       invisible(.self)
@@ -126,7 +127,7 @@ OccupancyMildew <- setRefClass(
     
     loadData = function() {
       load(getDataFileName(), envir=as.environment(.self))
-      data$varjoisuus <<- data$varjoisuus[drop=T] # TODO: move to preprocess/imputation
+      data$varjoisuus <<- data$varjoisuus[drop=T] # quick fix
       invisible(.self)
     },
     
