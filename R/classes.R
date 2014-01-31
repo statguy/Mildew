@@ -59,8 +59,8 @@ OccupancyMildew <- setRefClass(
     # Distance columns are the columns used for dissimilarity calculation and imputation columns
     # are the columns to be imputed.
     impute = function(k=50, aggregation.function=median, distance.metric="gower", exclude.distance.columns=NULL, exclude.imputation.columns=NULL) {
-      require(StatMatch)
-      require(plyr)
+      library(StatMatch)
+      library(plyr)
       
       aggregation.function <- match.fun(aggregation.function)
       distance.columns <- !(colnames(data) %in% exclude.distance.columns)
@@ -136,7 +136,7 @@ OccupancyMildew <- setRefClass(
     },
     
     addLandscapeConnectivity = function(connectivity.scale) {
-      require(plyr)
+      library(plyr)
 
       message("Computing landscape connectivity...")
       
@@ -192,7 +192,7 @@ OccupancyMildew <- setRefClass(
     },
 
     addPopulationConnectivity = function(connectivity.scale) {
-      require(plyr)
+      library(plyr)
       
       persistence <- getPersistence()
       
@@ -265,7 +265,7 @@ OccupancyMildew <- setRefClass(
           stop("Missing data (NAs) not allowed in covariates.")
         
         if (scale.covariates) {
-          require(arm)
+          library(arm)
           
           message("Scaling covariates...")
           
@@ -471,8 +471,8 @@ OccupancyMildew <- setRefClass(
     },
     
     loadBorder = function(fileName=file.path(basePath, "alandmap_1_20000/alandmap_rough")) {
-      require(sp)
-      require(maptools)
+      library(sp)
+      library(maptools)
       return(readShapeSpatial(fileName))
     },
     
