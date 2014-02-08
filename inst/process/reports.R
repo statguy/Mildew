@@ -2,9 +2,9 @@ library(Mildew)
 
 basePath <- "~/phd/mildew/data" # Set your path to the data files here
 
-occ <- OccupancyMildew$new(basePath=basePath, runParallel=runParallel)
-col <- ColonizationMildew$new(basePath=basePath, runParallel=runParallel)
-ext <- ExtinctionMildew$new(basePath=basePath, runParallel=runParallel)
+occ <- OccupancyMildew$new(basePath=basePath)
+col <- ColonizationMildew$new(basePath=basePath)
+ext <- ExtinctionMildew$new(basePath=basePath)
 
 summaryResult <- function(occ, col, ext, type, tag="") {
   tryCatch(occ$loadResult(type, tag)$summaryResult()$summaryHyperparameters(), error=function(e) message("Error: ", e$message))
