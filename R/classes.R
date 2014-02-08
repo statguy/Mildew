@@ -15,15 +15,21 @@ OccupancyMildew <- setRefClass(
     type = "character",
     tag = "character",
     coords.scale = "numeric",
-    mesh = "inla.mesh",
-    spde = "inla.spde2",
-    index = "list",
-    A = "Matrix",
-    group.years = "integer",
+    #mesh = "inla.mesh",
+    #spde = "inla.spde2",
+    #index = "list",
+    #A = "Matrix",
+    #group.years = "integer",
+    mesh = "ANY",
+    spde = "ANY",
+    index = "ANY",
+    A = "ANY",
+    group.years = "ANY",
     
     covariates = "ANY",
     model = "formula",
-    data.stack = "inla.data.stack",
+    #data.stack = "inla.data.stack",
+    data.stack = "ANY",
     result = "inla"
   ),
   methods = list(
@@ -287,6 +293,8 @@ OccupancyMildew <- setRefClass(
       years <- data$Year
       n.years <- length(unique(years))
       group.years <<- as.integer(years - min(years) + 1)
+
+      message("Model: ", model[2], " ", model[1], " ", model[3])
       
       if (type == "glm" | type == "temporalreplicate") return(.self)
 
@@ -426,46 +434,38 @@ OccupancyMildew <- setRefClass(
       invisible(.self)
     },
     
+    getINLAResult = function(marginal, fun=identity, coords.scale=1) {
+      m <- inla.tmarginal(function(x) fun(x) * coords.scale, marginal)
+      e <- inla.emarginal(function(x) x, m)
+      e2 <- inla.emarginal(function(x) x^2, m)
+      sd <- sqrt(e2-e^2)
+      q <- inla.qmarginal(c(0.025, 0.5, 0.975), m)
+      mode <- inla.mmarginal(m)
+      x <- data.frame(e=e, sd=sd, q1=q[1], q2=q[2], q3=q[3], mode=mode)
+      colnames(x) <- c("mean", "sd", "0.025quant","0.5quant","0.975quant", "mode")
+      return(x)
+    },
+    
     summaryHyperparameters = function() {
       if (!any(names(result) == "summary.hyperpar")) {
         message("Model has no hyperparameters.")
       }
       else {
         spde.result <- inla.spde2.result(result, "s", spde)
-        
-        range.t <- inla.tmarginal(function(x) x * coords.scale, spde.result$marginals.range.nominal$range.nominal.1)
-        range.e <- inla.emarginal(function(x) x, range.t)
-        range.e2 <- inla.emarginal(function(x) x^2, range.t)
-        range.sd <- sqrt(range.e2-range.e^2)
-        range.q <- inla.qmarginal(c(0.025, 0.5, 0.975), range.t)
-        
-        var.t <- inla.tmarginal(function(x) x, spde.result$marginals.variance.nominal$variance.nominal.1)
-        var.e <- inla.emarginal(function(x) x, var.t)
-        var.e2 <- inla.emarginal(function(x) x^2, var.t)
-        var.sd <- sqrt(var.e2-var.e^2)
-        var.q <- inla.qmarginal(c(0.025, 0.5, 0.975), var.t)
-        
-        kappa.t <- inla.tmarginal(function(x) x / coords.scale, spde.result$marginals.kappa$kappa.1)
-        kappa.e <- inla.emarginal(function(x) x, kappa.t)
-        kappa.e2 <- inla.emarginal(function(x) x^2, kappa.t)
-        kappa.sd <- sqrt(kappa.e2-kappa.e^2)
-        kappa.q <- inla.qmarginal(c(0.025, 0.5, 0.975), kappa.t)
-        
-        tau.t <- inla.tmarginal(function(x) x * coords.scale, spde.result$marginals.tau$tau.1)
-        tau.e <- inla.emarginal(function(x) x, tau.t)
-        tau.e2 <- inla.emarginal(function(x) x^2, tau.t)
-        tau.sd <- sqrt(tau.e2-tau.e^2)
-        tau.q <- inla.qmarginal(c(0.025, 0.5, 0.975), tau.t)
-        
-        y <- rbind(kappa=c(kappa.e, kappa.sd, kappa.q),
-                   tau=c(tau.e, tau.sd, tau.q),
-                   range=c(range.e, range.sd, range.q),
-                   variance=c(var.e, var.sd, var.q))
+
+        range <- getINLAResult(spde.result$marginals.range.nominal[[1]], coords.scale=coords.scale)
+        variance <- getINLAResult(spde.result$marginals.variance.nominal[[1]])
+        kappa <- getINLAResult(spde.result$marginals.kappa[[1]], coords.scale=1/coords.scale)
+        tau <- getINLAResult(spde.result$marginals.tau[[1]])
+                
+        y <- rbind(kappa=kappa,
+                   tau=tau,
+                   range=range,
+                   variance=variance)
         if (any(rownames(result$summary.hyperpar)=="GroupRho for s"))
           y <- rbind(y, rho=result$summary.hyperpar["GroupRho for s",])
-        colnames(y) <- c("mean","sd","0.025quant","0.5quant","0.975quant")
+        colnames(y) <- c("mean","sd","0.025quant","0.5quant","0.975quant","mode")
         print(y)
-        invisible(y)
       }
       invisible(.self)
     },
