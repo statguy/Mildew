@@ -8,14 +8,12 @@ occ <- OccupancyMildew$new(basePath=basePath, runParallel=runParallel)$loadData(
 col <- ColonizationMildew$new(basePath=basePath, runParallel=runParallel)$loadData()
 ext <- ExtinctionMildew$new(basePath=basePath, runParallel=runParallel)$loadData()
 occ.mesh.params <- list(min.angle=20, max.edge=c(3400,10000), cutoff=1000, coords.scale=1e6)
-col.mesh.params <- list(min.angle=20, max.edge=c(3300,10000), cutoff=1000, coords.scale=1e6) ## FIX
+col.mesh.params <- list(min.angle=20, max.edge=c(3400,10000), cutoff=1200, coords.scale=1e6)
 ext.mesh.params <- list(min.angle=20, max.edge=c(2800,10000), cutoff=1000, coords.scale=1e6)
 occ.connectivity.scale <- 2000
 col.connectivity.scale <- 2000
 ext.connectivity.scale <- 500
-#occ.fixed.effects <- "fallPLM2 + S + road_PA + varjoisuus2 + varjoisuus3 + Rainfall_August"
 occ.fixed.effects <- "fallPLM2 + S + road_PA + varjoisuus.L + varjoisuus.Q + Rainfall_August"
-#col.fixed.effects <- "fallPLM2 + S + Smildew_pers + road_PA + varjoisuus2 + varjoisuus3 + Rainfall_August"
 col.fixed.effects <- "fallPLM2 + S + Smildew_pers + road_PA + varjoisuus.L + varjoisuus.Q + Rainfall_August"
 ext.fixed.effects <- "fallPLM2 + S + Smildew + road_PA"
 
