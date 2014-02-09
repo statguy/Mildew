@@ -244,6 +244,8 @@ OccupancyMildew <- setRefClass(
     },
     
     setupModel = function(type, scale.covariates=TRUE, fixed.effects, mesh.params, plot=FALSE) {
+      library(INLA)
+      
       type <<- type
       #data <<- data[complete.cases(data),]
       
