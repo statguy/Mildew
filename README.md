@@ -1,17 +1,17 @@
-R-Mildew
-========
+Mildew
+======
 
 Setup
 -----
-First install [R-INLA](http://www.r-inla.org/) testing version, which you can install with the command
+First, install [R-INLA](http://www.r-inla.org/) testing version with the command
 ```r
 source("http://www.math.ntnu.no/inla/givemeINLA-testing.R")
 ```
-Then run Mildew setup script with the commands
+Then run Mildew setup script with the command
 ```r
-library(devtools)
 source_url("https://raw.github.com/statguy/R-Mildew/master/inst/process/setup.R")
 ```
+Be sure you have the `devtools` package installed first.
 
 Code files
 ----------
