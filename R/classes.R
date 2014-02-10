@@ -432,6 +432,7 @@ OccupancyMildew <- setRefClass(
     },
     
     summaryResult = function() {
+      library(INLA)
       print(summary(result))
       invisible(.self)
     },
@@ -449,6 +450,7 @@ OccupancyMildew <- setRefClass(
     },
     
     summaryHyperparameters = function() {
+      library(INLA)
       if (!any(names(result) == "summary.hyperpar")) {
         message("Model has no hyperparameters.")
       }
