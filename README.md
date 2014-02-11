@@ -61,7 +61,7 @@ to plot the mesh.
 Extensions
 ----------
 Extending the current code can be done by inheriting the classes defined in
-`https://raw.github.com/statguy/R-Mildew/master/R/classes.R`, which contains low-level code to
+`https://raw.github.com/statguy/Mildew/master/R/classes.R`, which contains low-level code to
 load the mildew data, set up models, estimate models with INLA, save results and print results.
 See more info about the references classes with the R command
 ```r
