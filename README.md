@@ -73,6 +73,6 @@ TODO
 ----
 * Plotting
 
-Bugs
-----
-Send bug reports to [`jvj@iki.fi`](mailto:jvj@iki.fi).
+Feedback
+--------
+Send any feedback to [`jvj@iki.fi`](mailto:jvj@iki.fi).
