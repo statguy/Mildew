@@ -1,8 +1,8 @@
 library(CNPCluster)
 library(Mildew)
 
-basePath <- "~/phd/mildew/data" # Set your path to the data files here
-runParallel <- TRUE
+if (!exists("basePath") | !exists("runParallel"))
+  stop("Please set basePath and runParallel parameters.")
 
 occ <- OccupancyMildew$new(basePath=basePath, runParallel=runParallel)$loadData()
 col <- ColonizationMildew$new(basePath=basePath, runParallel=runParallel)$loadData()

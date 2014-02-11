@@ -1,6 +1,7 @@
 library(Mildew)
 
-basePath <- "~/phd/mildew/data" # Set your path to the data files here
+if (!exists("basePath") | !exists("runParallel"))
+  stop("Please set basePath and runParallel parameters.")
 
 occ <- OccupancyMildew$new(basePath=basePath)
 col <- ColonizationMildew$new(basePath=basePath)

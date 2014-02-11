@@ -16,7 +16,8 @@ Be sure you have the `devtools` package installed first.
 Code files
 ----------
 In the subdirectory `process` of the Mildew package installation directory
-(which is shown by the command `path.package("Mildew")`), you can find the following files to
+(which is shown by the command `path.package("Mildew")` after loading
+the `Mildew` package), you can find the following files to
 preprocess, estimate and report results for the mildew data:
 * `preprocess.R`
 contains high-level code to preprocess the data so that it is useful for the analysis.
@@ -27,13 +28,17 @@ contains high-level code to load all results and print reports.
 
 Configuration
 -------------
-Set `basePath` in `preprocess.R`, `estimate.R` and `reports.R` to point to your mildew data directory.
-If you experience problems with parallel processing, set in these files
+Set `basePath` in to point your mildew data directory, for example
 ```r
-runParallel <- FALSE
+basePath <- "~/mildew"
 ```
-`preprocess.R` uses Ukko remote cluster for imputation. If you cannot access it, remove the cluster setup code.
-If you can use some other remote cluster, take a look at [R-Cluster](https://github.com/statguy/R-Cluster).
+and set `runParallel <- TRUE` for parallel processing.
+In case you have trouble with the parallel processing, disable it by
+`runParallel <- FALSE`.
+
+Imputation and estimation can both take advantage of high performance cluster
+if available. If you can access one, take a look at
+[R-Cluster](https://github.com/statguy/R-Cluster) for configuring it.
 
 Preprocessing, estimation, reporting
 ------------------------------------
