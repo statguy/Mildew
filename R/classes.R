@@ -60,6 +60,13 @@ OccupancyMildew <- setRefClass(
       invisible(.self)
     },
     
+    getMissingDataProportion = function(exclude.imputation.columns) {
+      loadRawData()
+      imputation.columns <- !(colnames(data) %in% exclude.imputation.columns)
+      x <- complete.cases(data[,imputation.columns])
+      message("Rows with missing data in covariates = ", round((1 - sum(x) / length(x)) * 100), "%")
+    },
+    
     # Imputation by k-nearest neighbors regression using Gower's distance that allows inclusion
     # of unordered and ordered categorical variables as well.
     # Distance columns are the columns used for dissimilarity calculation and imputation columns
@@ -243,10 +250,30 @@ OccupancyMildew <- setRefClass(
       return(newid)
     },
     
+    scaleCovariates = function() {
+      library(arm)
+      
+      message("Scaling covariates...")
+      
+      covariates$fallPLM2 <<- rescale(covariates$fallPLM2)
+      covariates$road_PA <<- rescale(covariates$road_PA)
+      covariates$Distance_to_shore <<- rescale(covariates$Distance_to_shore)
+      covariates$Open_bin <<- rescale(covariates$Open_bin)    
+      if (any(names(covariates) == "S")) covariates$S <<- rescale(covariates$S)
+      if (any(names(covariates) == "Smildew")) covariates$Smildew <<- rescale(covariates$Smildew)
+      if (any(names(covariates) == "Smildew_pers")) covariates$Smildew_pers <<- rescale(covariates$Smildew_pers)
+      covariates$fallPLdy <<- rescale(covariates$fallPLdry)
+      #covariates$varjoisuus <<- rescale(covariates$varjoisuus)
+      covariates$Rainfall_August <<- rescale(covariates$Rainfall_August)
+      covariates$Rainfall_July <<- rescale(covariates$Rainfall_July)
+      covariates$logDistance_to_shore <<- rescale(covariates$logDistance_to_shore)
+    },
+    
     setupModel = function(type, scale.covariates=TRUE, fixed.effects, mesh.params, plot=FALSE) {
       library(INLA)
       
       type <<- type
+      # Note: does not work with missing covariate data ATM, it is assumed the user to impute the missing values
       #data <<- data[complete.cases(data),]
       
       random.effects <- switch(type,
@@ -272,24 +299,7 @@ OccupancyMildew <- setRefClass(
         if (nrow(covariates) != nrow(data))
           stop("Missing data (NAs) not allowed in covariates.")
         
-        if (scale.covariates) {
-          library(arm)
-          
-          message("Scaling covariates...")
-          
-          covariates$fallPLM2 <<- rescale(covariates$fallPLM2)
-          covariates$road_PA <<- rescale(covariates$road_PA)
-          covariates$Distance_to_shore <<- rescale(covariates$Distance_to_shore)
-          covariates$Open_bin <<- rescale(covariates$Open_bin)    
-          if (any(names(covariates) == "S")) covariates$S <<- rescale(covariates$S)
-          if (any(names(covariates) == "Smildew")) covariates$Smildew <<- rescale(covariates$Smildew)
-          if (any(names(covariates) == "Smildew_pers")) covariates$Smildew_pers <<- rescale(covariates$Smildew_pers)
-          covariates$fallPLdy <<- rescale(covariates$fallPLdry)
-          #covariates$varjoisuus <<- rescale(covariates$varjoisuus)
-          covariates$Rainfall_August <<- rescale(covariates$Rainfall_August)
-          covariates$Rainfall_July <<- rescale(covariates$Rainfall_July)
-          covariates$logDistance_to_shore <<- rescale(covariates$logDistance_to_shore)
-        }
+        if (scale.covariates) scaleCovariates()
       }
       
       years <- data$Year
@@ -457,11 +467,22 @@ OccupancyMildew <- setRefClass(
       else {
         spde.result <- inla.spde2.result(result, "s", spde)
 
+        ###
+        kappa <- exp(spde.result$summary.log.kappa$mean)
+        tau <- exp(spde.result$summary.log.tau$mean)
+        kappa.scaled <- kappa * 1/coords.scale
+        
+        c(kappa.scaled, tau)
+        # Should be approximately the same
+        c(sqrt(8)/kappa.scaled, exp(spde.result$summary.log.range.nominal$mean) * coords.scale) # scaled range
+        (c(1/(4*pi*kappa^2*tau^2), exp(spde.result$summary.log.variance.nominal$mean))) # variance, do not use scaled kappa as scaling is compensated by tau
+        ###
+        
         range <- getINLAResult(spde.result$marginals.range.nominal[[1]], coords.scale=coords.scale)
         variance <- getINLAResult(spde.result$marginals.variance.nominal[[1]])
         kappa <- getINLAResult(spde.result$marginals.kappa[[1]], coords.scale=1/coords.scale)
         tau <- getINLAResult(spde.result$marginals.tau[[1]])
-                
+        
         y <- rbind(kappa=kappa,
                    tau=tau,
                    range=range,
@@ -561,5 +582,111 @@ ExtinctionMildew <- setRefClass(
       data <<- mildew
       invisible(.self)
     }
+  )
+)
+
+
+
+
+
+ModelResults <- setRefClass(
+  "ModelResults",
+  fields = list(
+    occ = "OccupancyMildew",
+    col = "ColonizationMildew",
+    ext = "ExtinctionMildew",
+    shortName = "character",
+    longName = "character"
+  ),
+  methods = list(
+    initialize = function(basePath, type, tag="", shortName, ...) {
+      callSuper(...)
+      if (missing(basePath) | missing(type) | missing(shortName))
+        stop("Missing argument.")
+      shortName <<- shortName
+      occ <<- OccupancyMildew$new(basePath=basePath)$loadResult(type, tag)
+      col <<- ColonizationMildew$new(basePath=basePath)$loadResult(type, tag)
+      ext <<- ExtinctionMildew$new(basePath=basePath)$loadResult(type, tag)
+    }
+  )
+)
+
+MildewResults = setRefClass(
+  "MildewResults",
+  fields = list(
+    results = "list",
+    basePath = "character"
+  ),
+  methods = list(
+    initialize = function(basePath, ...) {
+      callSuper(...)
+      if (missing(basePath))
+        stop("Missing argument.")
+      basePath <<- basePath
+      addResult(type="glm", shortName="OL")
+      addResult(type="spatiotemporal", tag="interceptonly", shortName="ST-I")
+      addResult(type="spatialonly", shortName="S")
+      addResult(type="temporalreplicate", shortName="TR")
+      addResult(type="spatialreplicate", shortName="SR")
+      addResult(type="spatiotemporal", shortName="ST")
+    },
+    
+    addResult = function(type, tag="", shortName) {
+      n <- length(results)
+      results[[n + 1]] <<- ModelResults$new(basePath=basePath, type=type, tag=tag, shortName=shortName)
+    },
+    
+    plotYearEstimates = function(size=18) {
+      library(plyr)
+      library(ggplot2)
+      library(grid)
+      
+      prepareResult <- function(mildew, predname, outcome) {
+        library(reshape2)
+        mildew.data <- mildew$data[!is.na(mildew$data$y),]        
+        mildew.data$Year <- as.factor(mildew.data$Year)
+        levels(mildew.data$Year) <- substr(levels(mildew.data$Year),3,4)        
+        x <- melt(ddply(mildew.data, .(Year),
+                        function(x) cbind(Observed=sum(x$y)/nrow(x),
+                                          Predicted=sum(x$mu)/nrow(x))), ## TODO
+                  #q025=quantile(x$mu, .025), q975=quantile(x$mu, .975))),
+                  #q025=sum(x$mu025), q975=sum(x$mu975))),
+                  id.vars="Year")
+        x$Data <- as.factor(!(x$variable %in% "Observed"))
+        levels(x$Data) <- c("Observed", predname)
+        x$Summary <- as.factor(!(x$variable %in% c("Observed","Predicted")))
+        levels(x$Summary) <- c("Mean","95% quantiles")
+        x$Outcome <- outcome
+        return(x)
+      }
+              
+      result <- ldply(results, function(x) {
+        rbind(prepareResult(x$occ, x$shortName, "Occupancy"),
+              prepareResult(x$col, x$shortName, "Colonization"),
+              prepareResult(x$ext, x$shortName, "Extinction"))
+      })
+      
+      result$Outcome <- factor(result$Outcome)
+            
+      years <- levels(result$Year)
+      breaks <- years[seq(1, length(years), by=2)]
+      years.numeric <- as.numeric(as.character(result$Year))
+      breaks.numeric <- seq(min(years.numeric), max(years.numeric), by=2)
+      labels <- sprintf(breaks.numeric, fmt="%02d")
+      #print(breaks.numeric)
+      #print(labels)
+      p <- ggplot(result, aes(x=Year, y=value, group=interaction(variable, Data), colour=Data)) +
+        geom_line(size=1, aes(linetype=Data)) + facet_wrap(~Outcome, scales="free_y") +
+        #geom_line(aes(linetype=Summary), size=1) +
+        ylab("Probability") + theme_bw(size) +
+        theme(legend.position="bottom", legend.title=element_blank()) +
+        theme(plot.margin=unit(c(0,0,-1,0), "lines")) +
+        scale_x_discrete(breaks=breaks, labels=labels)
+      
+      print(p)
+      ggsave(p, filename=file.path(basePath, paste("years", "all", ".png", sep="")), width=8, height=4)
+      return(p)
+    }
+        
   )
 )
