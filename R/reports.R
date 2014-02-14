@@ -38,9 +38,9 @@ smooth <- function(xy, z, rows=100, cols=100, extend=0, scale) {
   ext <- extent(min(xy[,1]) - extend, max(xy[,1]) + extend, min(xy[,2]) - extend, max(xy[,2]) + extend)
   r <- raster(ext, rows, cols)
   r <- pointsToRaster(r, cbind(xy, z))
-  #rz <- rasterize(xy, r, field=z, background=0, fun=mean)
+  #r <- rasterize(xy, r, field=z, background=0, fun=mean)
   kernel <- focalWeight(r, scale, "Gauss")
-  smooth <- focal(rz, w=kernel)
+  smooth <- focal(r, w=kernel)
   return(smooth)      
 }
 
