@@ -20,7 +20,7 @@ theme_raster <- function(base_size=12) {
 
 smooth <- function(xy, z, nrow=100, ncol=100, extend=0, scale) {
   library(raster)
-  ext <- extent(min(xyz$x)-extend, max(xyz$x)+extend, min(xyz$y)-extend, max(xyz$y)+extend)
+  ext <- extent(min(xy$x)-extend, max(xy$x)+extend, min(xy$y)-extend, max(xy$y)+extend)
   r <- raster(ext, nrow, ncol)
   rz <- rasterize(xy, r, field=z, background=0)
   kernel <- focalWeight(r, scale, "Gauss")
