@@ -194,11 +194,11 @@ MildewResults = setRefClass(
         if (save) savePlot(p, "obspred", title)
       }
       
-      x <- selectResults("ST")
+      st <- selectResults("ST")
       border <- loadBorder()
-      .plotInternal(result$occ, "Occupancy")
-      .plotInternal(result$col, "Colonization")
-      .plotInternal(result$ext, "Extinction")
+      .plotInternal(st$occ, "Occupancy")
+      .plotInternal(st$col, "Colonization")
+      .plotInternal(st$ext, "Extinction")
     }
     
   )
