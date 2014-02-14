@@ -114,6 +114,7 @@ MildewResults = setRefClass(
       library(grid)
       
       prepareResult <- function(mildew, predname, outcome) {
+        message("Processing ", predname, " of ", outcome, "...")
         library(reshape2)
         mildew.data <- mildew$data[!is.na(mildew$data$y),]
         mildew.data$Year <- as.factor(mildew.data$Year)
@@ -193,7 +194,7 @@ MildewResults = setRefClass(
         if (save) savePlot(p, "obspred", title)
       }
       
-      x <- selectResults[["ST"]]      
+      x <- selectResults("ST")
       border <- loadBorder()
       .plotInternal(result$occ, "Occupancy")
       .plotInternal(result$col, "Colonization")
