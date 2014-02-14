@@ -18,11 +18,27 @@ theme_raster <- function(base_size=12) {
   )
 }
 
-smooth <- function(xy, z, nrow=100, ncol=100, extend=0, scale) {
+pointsToRaster <- function(r, xyz) {
+  x.scale <- (dim(r)[1] - 1) / (xmax(r) - xmin(r))
+  y.scale <- (dim(r)[2] - 1) / (ymax(r) - ymin(r))
+  x.trans <- xmin(r)
+  y.trans <- ymin(r)
+  xy.raster <- cbind(round(cbind(x.scale * (xyz[,1] - x.trans),
+                                y.scale * (xyz[,2] - y.trans)) + 1))
+  m.raster <- matrix(0, nrow=dim(r)[1], ncol=dim(r)[2])
+  for (i in 1:nrow(xy.raster)) {
+    m.raster[xy.raster[i,1], xy.raster[i,2]] <- m.raster[xy.raster[i,1], xy.raster[i,2]] + xyz[i,3]
+  }
+  r <- setValues(r, m.raster)
+  return(r)
+}
+
+smooth <- function(xy, z, rows=100, cols=100, extend=0, scale) {
   library(raster)
-  ext <- extent(min(xy[1,])-extend, max(xy[1,])+extend, min(xy[2,])-extend, max(xy[2,])+extend)
-  r <- raster(ext, nrow, ncol)
-  rz <- rasterize(xy, r, field=z, background=0, fun=mean)
+  ext <- extent(min(xy[,1]) - extend, max(xy[,1]) + extend, min(xy[,2]) - extend, max(xy[,2]) + extend)
+  r <- raster(ext, rows, cols)
+  r <- pointsToRaster(r, cbind(xy, z))
+  #rz <- rasterize(xy, r, field=z, background=0, fun=mean)
   kernel <- focalWeight(r, scale, "Gauss")
   smooth <- focal(rz, w=kernel)
   return(smooth)      
