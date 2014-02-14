@@ -108,7 +108,7 @@ MildewResults = setRefClass(
       ggsave(p, filename=file.path(basePath, paste(name, "-", tag, ".png", sep="")), width=8, height=4)      
     },
     
-    plotYearEstimates = function(size=18) {
+    plotYearEstimates = function(size=18, save=F) {
       library(plyr)
       library(ggplot2)
       library(grid)
@@ -156,7 +156,7 @@ MildewResults = setRefClass(
         scale_x_discrete(breaks=breaks, labels=labels)
       
       print(p)
-      savePlot(p, "years", "all")
+      if (save) savePlot(p, "years", "all")
       return(p)
     },
     
@@ -190,11 +190,11 @@ MildewResults = setRefClass(
         p <- plotMaps(r[[1]], r[[2]], border=border, size=size, border_size=0.1, extend=extend, title=title) +
           scale_fill_gradient(low="white", high="red")
         print(p)
-        if (save) savePlot("obspred", title)
+        if (save) savePlot(p, "obspred", title)
       }
       
       x <- selectResults[["ST"]]      
-      border <- loadBorder()      
+      border <- loadBorder()
       .plotInternal(result$occ, "Occupancy")
       .plotInternal(result$col, "Colonization")
       .plotInternal(result$ext, "Extinction")

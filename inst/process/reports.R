@@ -23,3 +23,8 @@ summaryResult(occ, col, ext, type="temporalreplicate")
 summaryResult(occ, col, ext, type="spatialreplicate")
 summaryResult(occ, col, ext, type="spatiotemporal")
 
+
+
+mildewResults <- MildewResults$new(basePath=basePath)
+mildewResults$plotYearEstimates(save=T)
+mildewResults$plotObservedPredicted(save=T)
