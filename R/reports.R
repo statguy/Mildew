@@ -20,7 +20,7 @@ theme_raster <- function(base_size=12) {
 
 smooth <- function(xy, z, nrow=100, ncol=100, extend=0, scale) {
   library(raster)
-  ext <- extent(min(xy$x)-extend, max(xy$x)+extend, min(xy$y)-extend, max(xy$y)+extend)
+  ext <- extent(min(xy[1,])-extend, max(xy[1,])+extend, min(xy[2,])-extend, max(xy[2,])+extend)
   r <- raster(ext, nrow, ncol)
   rz <- rasterize(xy, r, field=z, background=0)
   kernel <- focalWeight(r, scale, "Gauss")
@@ -176,7 +176,7 @@ MildewResults = setRefClass(
       getObservedPredicted <- function(mildew, extend, scale) {
         mildew.data <- mildew$data[!is.na(mildew$data$y),]
         xyz <- subset(mildew.data, select=c("Longitude", "Latitude", "y"))
-        observed <- smooth(xyz[,1:2], xyz[,3], extend=extend, scale=scale)
+        observed <- smooth(xyz[,1:2], as.numeric(xyz[,3]), extend=extend, scale=scale)
         xyz <- subset(mildew.data, select=c("Longitude", "Latitude", "mu"))
         predicted <- smooth(xyz[,1:2], xyz[,3], extend=extend, scale=scale)
         x <- stack(observed, predicted)
