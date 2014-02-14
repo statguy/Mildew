@@ -22,7 +22,7 @@ smooth <- function(xy, z, nrow=100, ncol=100, extend=0, scale) {
   library(raster)
   ext <- extent(min(xy[1,])-extend, max(xy[1,])+extend, min(xy[2,])-extend, max(xy[2,])+extend)
   r <- raster(ext, nrow, ncol)
-  rz <- rasterize(xy, r, field=z, background=0)
+  rz <- rasterize(xy, r, field=z, background=0, fun=mean)
   kernel <- focalWeight(r, scale, "Gauss")
   smooth <- focal(rz, w=kernel)
   return(smooth)      
@@ -105,7 +105,9 @@ MildewResults = setRefClass(
     },
     
     savePlot = function(p, name, tag) {
-      ggsave(p, filename=file.path(basePath, paste(name, "-", tag, ".png", sep="")), width=8, height=4)      
+      fileName <- file.path(basePath, paste(name, "-", tag, ".png", sep=""))
+      message("Saving plot ", fileName, "...")
+      ggsave(p, filename=fileName, width=8, height=4)
     },
     
     plotYearEstimates = function(size=18, save=F) {
