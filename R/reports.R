@@ -127,6 +127,21 @@ MildewResults = setRefClass(
       return(invisible(.self))
     },
     
+    summary = function() {
+      library(plyr)
+
+      .summaryInternal <- function(x, outcome, tag) {
+        message("Summary for ", tag, " of ", outcome)
+        x$summaryResult()$summaryHyperparameters()$summaryPredictionAccuracy(0.5)$summaryPredictionAccuracy(0.1)$summaryVariance()
+      }
+      
+      l_ply(results, function(x) {
+        .summaryInternal(x$occ, "Occupancy", x$tag)
+        .summaryInternal(x$col, "Colonization", x$tag)
+        .summaryInternal(x$ext, "Extinction", x$tag)
+      })
+    },
+    
     savePlot = function(p, name, tag) {
       fileName <- file.path(basePath, paste(name, "-", tag, ".png", sep=""))
       message("Saving plot ", fileName, "...")
@@ -207,7 +222,7 @@ MildewResults = setRefClass(
         names(x) <- c("Observed", "Predicted")
         return(x)
       }
-            
+      
       .plotInternal <- function(mildew, title) {
         r <- getObservedPredicted(mildew, extend=extend, scale=scale)
         p <- plotRasterMaps(r[[1]], r[[2]], border=border, size=size, border_size=0.1, extend=extend, title=title) +
@@ -268,6 +283,6 @@ MildewResults = setRefClass(
       .plotInternal(st$occ, "Occupancy")
       .plotInternal(st$col, "Colonization")
       .plotInternal(st$ext, "Extinction")
-    }
+    }    
   )
 )

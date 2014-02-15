@@ -495,6 +495,35 @@ OccupancyMildew <- setRefClass(
       invisible(.self)
     },
     
+    summaryPredictionAccuracy = function(cutoff=.5) {
+      full <- data[!is.na(data$y),]
+      overall <- sum(full$y == (full$mu >= cutoff)) / nrow(full) # Overall prediction for true positives and negatives
+      y <- subset(full, y==0)
+      trueneg <- sum(y$y == (y$mu >= cutoff)) / nrow(y) # Prediction rate for true negatives
+      falseneg <- sum(y$y != (y$mu >= cutoff)) / nrow(y) # Prediction rate for false negatives
+      y <- subset(full, y==1)
+      truepos <- sum(y$y == (y$mu >= cutoff)) / nrow(y) # Prediction rate for true positives
+      falsepos <- sum(y$y != (y$mu >= cutoff)) / nrow(y) # Prediction rate for false positives
+      message("Cutoff = ", cutoff, ", overall = ", overall, ", true neg = ", trueneg, ", true pos = ", truepos)
+      invisible(.self)
+    },
+    
+    summaryVariance = function() {
+      beta <- as.matrix(result$summary.fixed[,"mean"])
+      beta.environmental <- names(result$summary.fixed[,"mean"])
+      beta.environmental <- beta.environmental[beta.environmental %in% c("varjoisuus.L","varjoisuus.Q","Rainfall_July","Rainfall_August")]
+      beta.spatial <- names(result$summary.fixed[,"mean"])
+      beta.spatial <- beta.spatial[beta.spatial %in% c("fallPLM2","road_PA","S","Smildew","Smildew_pers")]
+      fixed.environmental <- as.matrix(covariates[,beta.environmental]) %*% beta[beta.environmental,]
+      fixed.spatial <- as.matrix(covariates[,beta.spatial]) %*% beta[beta.spatial,]
+      
+      x <- data.frame(data, environmental=fixed.environmental, spatial=fixed.spatial, fixed=fixed.environmental+fixed.spatial)
+      decompose <- function(x) round(data.frame(environmental=var(x$environmental), spatial=var(x$spatial), cov=2*cov(x$environmental,x$spatial), p=var(x$environmental)/(var(x$environmental)+var(x$spatial))), 2)
+      print(decompose(x))
+
+      invisible(.self)
+    },
+    
     loadBorder = function(fileName=file.path(basePath, "alandmap_1_20000/alandmap_rough")) {
       library(sp)
       library(maptools)
