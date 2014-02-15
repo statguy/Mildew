@@ -179,7 +179,7 @@ MildewResults = setRefClass(
               prepareResult(x$ext, x$shortName, "Extinction"))
       })
       
-      result$Outcome <- factor(result$Outcome)
+      result$Outcome <- factor(result$Outcome, levels=c("Occupancy","Colonization","Extinction"))
       
       years <- levels(result$Year)
       breaks <- years[seq(1, length(years), by=2)]
