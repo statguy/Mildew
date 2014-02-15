@@ -509,6 +509,8 @@ OccupancyMildew <- setRefClass(
     },
     
     summaryVariance = function() {
+      if (is.null(covariates)) return(invisible(.self))
+      
       beta <- as.matrix(result$summary.fixed[,"mean"])
       beta.environmental <- names(result$summary.fixed[,"mean"])
       beta.environmental <- beta.environmental[beta.environmental %in% c("varjoisuus.L","varjoisuus.Q","Rainfall_July","Rainfall_August")]
