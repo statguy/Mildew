@@ -175,7 +175,6 @@ MildewResults = setRefClass(
       #print(labels)
       p <- ggplot(result, aes(x=Year, y=value, group=interaction(variable, Data), colour=Data)) +
         geom_line(size=1, aes(linetype=Data)) + facet_wrap(~Outcome, scales="free_y") +
-        #geom_line(aes(linetype=Summary), size=1) +
         ylab("Probability") + theme_bw(size) +
         theme(legend.position="bottom", legend.title=element_blank()) +
         theme(plot.margin=unit(c(0,0,-1,0), "lines")) +
@@ -224,7 +223,7 @@ MildewResults = setRefClass(
       .plotInternal(st$ext, "Extinction")
     },
     
-    plotFixedRandom = function(extend=500, size=18, save=F) {
+    plotFixedRandom = function(extend=500, size=12, save=F) {
       library(ggplot2)
       
       getFixedRandom <- function(mildew) {
@@ -234,7 +233,6 @@ MildewResults = setRefClass(
         beta.index <- names(mildew$result$summary.fixed[,"mean"])[-1]
         fixed <- as.matrix(mildew$covariates[,beta.index]) %*% beta
         hotspot <- as.vector(mildew$A %*% mildew$result$summary.random$s$mean)
-        #zerocenter <- mean(fixed)
         
         xyz.fixed <- data.frame(x=mildew$data$Longitude, y=mildew$data$Latitude, z=fixed, t=mildew$data$Year)
         xyz.fixed.aggregated <- ddply(xyz.fixed, .(x,y), function(x) data.frame(x=x$x[1], y=x$y[1], z=mean(x$z)))
@@ -255,15 +253,15 @@ MildewResults = setRefClass(
           geom_path(data=border.fed, aes(x=long, y=lat, group=group), colour="black", size=.1) +
           geom_point(aes(colour=z), size=2) +
           coord_fixed(xlim=border@bbox[1,] + c(-1,1) * extend, ylim=border@bbox[2,] + c(-1,1) * extend) +
-          scale_colour_gradient2(low="blue", mid="grey", high="red") +
+          scale_colour_gradient2(low="blue", mid="grey", high="red", guide=guide_colorbar(title=NULL, direction="horizontal")) +
           theme_raster(size) +
-          theme(panel.background=element_rect(fill="white"), legend.position="bottom", legend.title=element_blank()) +
-          theme(legend.margin=unit(-1.5, "cm")) +
+          theme(legend.position=c(0.5, 0.1)) +
+          theme(legend.background=element_rect(color="grey")) +
           ggtitle(title)
         print(p)
         if (save) savePlot(p, "fixrnd", title)
       }
-      
+
       st <- selectResults("ST")
       border <- loadBorder()
       border.fed <- fortify(border)
