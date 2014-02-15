@@ -193,9 +193,9 @@ MildewResults = setRefClass(
       
       getObservedPredicted <- function(mildew, extend, scale) {
         mildew.data <- mildew$data[!is.na(mildew$data$y),]
-        xyz <- subset(mildew.data, select=c("Longitude", "Latitude", "y"))
+        xyz <- subset(mildew.data, select=c("Latitude", "Longitude", "y"))
         observed <- smooth(xyz[,1:2], as.numeric(xyz[,3]), extend=extend, scale=scale)
-        xyz <- subset(mildew.data, select=c("Longitude", "Latitude", "mu"))
+        xyz <- subset(mildew.data, select=c("Latitude", "Longitude", "mu"))
         predicted <- smooth(xyz[,1:2], xyz[,3], extend=extend, scale=scale)
         x <- stack(observed, predicted)
         names(x) <- c("Observed", "Predicted")
