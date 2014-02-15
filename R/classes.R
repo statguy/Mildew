@@ -461,7 +461,7 @@ OccupancyMildew <- setRefClass(
     
     summaryHyperparameters = function() {
       library(INLA)
-      if (!any(names(result) == "summary.hyperpar")) {
+      if (!any(names(result) == "summary.hyperpar") | is.null(spde)) {
         message("Model has no hyperparameters.")
       }
       else {
