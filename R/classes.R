@@ -441,6 +441,14 @@ OccupancyMildew <- setRefClass(
       invisible(.self)
     },
     
+    estimateMu = function() {
+      message("Estimating mu...")
+      library(plyr)
+      index.pred <- inla.stack.index(data.stack, "pred")$data
+      data$mu <<- laply(result$marginals.linear.predictor[index.pred], function(x) inla.emarginal(invlogit, x), .progress="text")      
+      invisible(.self)
+    },
+    
     summaryResult = function() {
       library(INLA)
       print(summary(result))

@@ -132,7 +132,7 @@ MildewResults = setRefClass(
 
       .summaryInternal <- function(x, outcome, tag) {
         message("Summary for ", tag, " of ", outcome)
-        x$summaryResult()$summaryHyperparameters()$summaryPredictionAccuracy(0.5)$summaryPredictionAccuracy(0.1)$summaryVariance()
+        x$estimateMu()$summaryResult()$summaryHyperparameters()$summaryPredictionAccuracy(0.5)$summaryPredictionAccuracy(0.1)$summaryVariance()
       }
       
       l_ply(results, function(x) {
