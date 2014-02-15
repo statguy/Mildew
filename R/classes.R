@@ -447,11 +447,11 @@ OccupancyMildew <- setRefClass(
       message("Estimating mu...")
       
       if (is.null(data.stack) | inherits(data.stack, "uninitializedField")) {
-        data$mu <<- laply(result$marginals.linear.predictor, function(x, invlogit) inla.emarginal(invlogit, x), invlogit=invlogit, .progress="text")
+        data$mu <<- laply(result$marginals.linear.predictor, function(x) inla.emarginal(function(x) exp(x)/(1+exp(x)), x), .progress="text")
       }
       else {
         index.pred <- inla.stack.index(data.stack, "pred")$data
-        data$mu <<- laply(result$marginals.linear.predictor[index.pred], function(x, invlogit) inla.emarginal(invlogit, x), invlogit=invlogit, .progress="text")
+        data$mu <<- laply(result$marginals.linear.predictor[index.pred], function(x) inla.emarginal(function(x) exp(x)/(1+exp(x)), x), .progress="text")
       }
       invisible(.self)
     },
