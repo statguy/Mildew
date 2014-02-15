@@ -29,11 +29,12 @@ pointsToRaster <- function(r, xyz) {
   for (i in 1:nrow(xy.raster)) {
     m.raster[xy.raster[i,1], xy.raster[i,2]] <- m.raster[xy.raster[i,1], xy.raster[i,2]] + xyz[i,3]
   }
-  r <- setValues(r, m.raster)
+  values(r) <- t(m.raster[,ncol(m.raster):1])
+  #r <- setValues(r, m.raster)
   return(r)
 }
 
-smooth <- function(xy, z, rows=100, cols=100, extend=0, scale) {
+smooth <- function(xy, z, rows=400, cols=400, extend=0, scale) {
   library(raster)
   ext <- extent(min(xy[,1]) - extend, max(xy[,1]) + extend, min(xy[,2]) - extend, max(xy[,2]) + extend)
   r <- raster(ext, rows, cols)
@@ -108,16 +109,22 @@ MildewResults = setRefClass(
       if (missing(basePath))
         stop("Missing argument.")
       basePath <<- basePath
+      return(invisible(.self))
+    },
+
+    addAllResults = function() {
       addResult(type="glm", shortName="OL")
       addResult(type="spatiotemporal", tag="interceptonly", shortName="ST-I")
       addResult(type="spatialonly", shortName="S")
       addResult(type="temporalreplicate", shortName="TR")
       addResult(type="spatialreplicate", shortName="SR")
       addResult(type="spatiotemporal", shortName="ST")
+      return(invisible(.self))
     },
     
     addResult = function(type, tag="", shortName) {
       results[[shortName]] <<- ModelResults$new(basePath=basePath, type=type, tag=tag, shortName=shortName)
+      return(invisible(.self))
     },
     
     savePlot = function(p, name, tag) {
@@ -193,9 +200,9 @@ MildewResults = setRefClass(
       
       getObservedPredicted <- function(mildew, extend, scale) {
         mildew.data <- mildew$data[!is.na(mildew$data$y),]
-        xyz <- subset(mildew.data, select=c("Latitude", "Longitude", "y"))
+        xyz <- subset(mildew.data, select=c("Longitude", "Latitude", "y"))
         observed <- smooth(xyz[,1:2], as.numeric(xyz[,3]), extend=extend, scale=scale)
-        xyz <- subset(mildew.data, select=c("Latitude", "Longitude", "mu"))
+        xyz <- subset(mildew.data, select=c("Longitude", "Latitude", "mu"))
         predicted <- smooth(xyz[,1:2], xyz[,3], extend=extend, scale=scale)
         x <- stack(observed, predicted)
         names(x) <- c("Observed", "Predicted")
