@@ -45,7 +45,7 @@ smooth <- function(xy, z, rows=400, cols=400, extend=0, scale) {
   return(smooth)      
 }
 
-plotMaps <- function(..., ids, border, ncol=2, size=18, border_size=0.5, extend=0, title="") {
+plotRasterMaps <- function(..., ids, border, ncol=2, size=18, border_size=0.5, extend=0, title="") {
   library(raster)
   library(ggplot2)
   library(plyr)
@@ -195,7 +195,7 @@ MildewResults = setRefClass(
       return(readShapeSpatial(fileName))
     },
     
-    plotObservedPredicted = function(size=12, save=F) {
+    plotObservedPredicted = function(size=12, extend=500, scale=500, save=F) {
       library(raster)
       
       getObservedPredicted <- function(mildew, extend, scale) {
@@ -210,10 +210,8 @@ MildewResults = setRefClass(
       }
             
       .plotInternal <- function(mildew, title) {
-        extend <- 500
-        scale <- 500
         r <- getObservedPredicted(mildew, extend=extend, scale=scale)
-        p <- plotMaps(r[[1]], r[[2]], border=border, size=size, border_size=0.1, extend=extend, title=title) +
+        p <- plotRasterMaps(r[[1]], r[[2]], border=border, size=size, border_size=0.1, extend=extend, title=title) +
           scale_fill_gradient(low="white", high="red")
         print(p)
         if (save) savePlot(p, "obspred", title)
@@ -224,7 +222,54 @@ MildewResults = setRefClass(
       .plotInternal(st$occ, "Occupancy")
       .plotInternal(st$col, "Colonization")
       .plotInternal(st$ext, "Extinction")
-    }
+    },
     
+    plotFixedRandom = function(extend=500, size=18, save=F) {
+      library(ggplot2)
+      
+      getFixedRandom <- function(mildew) {
+        library(plyr)
+        
+        beta <- as.matrix(mildew$result$summary.fixed[,"mean"])[-1,,drop=F] # drop intercept
+        beta.index <- names(mildew$result$summary.fixed[,"mean"])[-1]
+        fixed <- as.matrix(mildew$covariates[,beta.index]) %*% beta
+        hotspot <- as.vector(mildew$A %*% mildew$result$summary.random$s$mean)
+        #zerocenter <- mean(fixed)
+        
+        xyz.fixed <- data.frame(x=mildew$data$Longitude, y=mildew$data$Latitude, z=fixed, t=mildew$data$Year)
+        xyz.fixed.aggregated <- ddply(xyz.fixed, .(x,y), function(x) data.frame(x=x$x[1], y=x$y[1], z=mean(x$z)))
+        xyz.hotspot <- data.frame(x=mildew$data$Longitude, y=mildew$data$Latitude, z=hotspot, t=mildew$data$Year)
+        xyz.hotspot.aggregated <- ddply(xyz.hotspot, .(x,y), function(x) data.frame(x=x$x[1], y=x$y[1], z=mean(x$z)))
+        
+        xyz.fixed.aggregated$Variable <- "Fixed effects"
+        xyz.hotspot.aggregated$Variable <- "Random effects"
+        xyz <- rbind(xyz.fixed.aggregated, xyz.hotspot.aggregated)
+        return(xyz)
+      }
+      
+      .plotInternal <- function(mildew, title) {
+        xyz <- getFixedRandom(mildew)
+        p <- ggplot(xyz, aes(x=x, y=y)) +
+          facet_grid(.~Variable) +
+          geom_polygon(data=border.fed, aes(x=long, y=lat, group=group), fill="white") +
+          geom_path(data=border.fed, aes(x=long, y=lat, group=group), colour="black", size=.1) +
+          geom_point(aes(colour=z), size=2) +
+          coord_fixed(xlim=border@bbox[1,] + c(-1,1) * extend, ylim=border@bbox[2,] + c(-1,1) * extend) +
+          scale_colour_gradient2(low="blue", mid="grey", high="red") +
+          theme_raster(size) +
+          theme(panel.background=element_rect(fill="white"), legend.position="bottom", legend.title=element_blank()) +
+          theme(legend.margin=unit(-1.5, "cm")) +
+          ggtitle(title)
+        print(p)
+        if (save) savePlot(p, "fixrnd", title)
+      }
+      
+      st <- selectResults("ST")
+      border <- loadBorder()
+      border.fed <- fortify(border)
+      .plotInternal(st$occ, "Occupancy")
+      .plotInternal(st$col, "Colonization")
+      .plotInternal(st$ext, "Extinction")
+    }
   )
 )
