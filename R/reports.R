@@ -136,9 +136,9 @@ MildewResults = setRefClass(
       }
       
       l_ply(results, function(x) {
-        .summaryInternal(x$occ, "Occupancy", x$tag)
-        .summaryInternal(x$col, "Colonization", x$tag)
-        .summaryInternal(x$ext, "Extinction", x$tag)
+        .summaryInternal(x$occ, "Occupancy", x$shortName)
+        .summaryInternal(x$col, "Colonization", x$shortName)
+        .summaryInternal(x$ext, "Extinction", x$shortName)
       })
     },
     
