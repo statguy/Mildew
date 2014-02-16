@@ -195,7 +195,8 @@ MildewResults = setRefClass(
       
       print(p)
       if (save) savePlot(p, "years", "all")
-      return(p)
+      
+      return(invisible(.self))
     },
     
     selectResults = function(shortName) {
@@ -234,6 +235,8 @@ MildewResults = setRefClass(
       .plotInternal(st$occ, "Occupancy")
       .plotInternal(st$col, "Colonization")
       .plotInternal(st$ext, "Extinction")
+      
+      return(invisible(.self))
     },
     
     plotFixedRandom = function(extend=500, size=12, save=F) {
@@ -281,6 +284,38 @@ MildewResults = setRefClass(
       .plotInternal(st$occ, "Occupancy")
       .plotInternal(st$col, "Colonization")
       .plotInternal(st$ext, "Extinction")
+      
+      return(invisible(.self))
+    },
+    
+    plotPosteriorRange <- function(logscale=T, size=24, save=F) {
+      getPosteriorRange <- function(mildew, title) {
+        spde.result <- inla.spde2.result(mildew$result, "s", mildew$spde)  
+        range.t <- inla.tmarginal(function(x) x * mildew$coords.scale / 1000, spde.result$marginals.range.nominal$range.nominal.1)
+        return(cbind(Response=title, as.data.frame(unclass(range.t))))
+      }
+      
+      library(ggplot2)
+      
+      postrange <- rbind(getRange(results[["ST"]]$occ, "Occupancy"),
+                         getRange(results[["ST"]]$col, "Colonization"),
+                         getRange(results[["ST"]]$ext, "Extinction"))
+      
+      p <- ggplot(postrange, aes(x, y, group=Response, colour=Response)) + geom_line(size=1) +
+        scale_y_continuous("Posterior marginal density") +
+        theme_bw(size) + theme(legend.position="bottom",
+                               panel.grid.major=element_blank(), panel.grid.minor=element_blank(), panel.border=element_blank(),
+                               axis.line = element_line(size=1, colour="black"))
+      
+      if (logscale)
+        p <- p + scale_x_log10("Log range (km)")
+      else
+        p <- p + xlab("Range (km)")
+      
+      print(p)
+      if (save) savePlot(p, "postrange", "all")
+      
+      return(invisible(.self))
     }
   )
 )
