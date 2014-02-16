@@ -161,9 +161,7 @@ MildewResults = setRefClass(
         levels(mildew.data$Year) <- substr(levels(mildew.data$Year),3,4)        
         x <- melt(ddply(mildew.data, .(Year),
                         function(x) cbind(Observed=sum(x$y)/nrow(x),
-                                          Predicted=sum(x$mu)/nrow(x))), ## TODO
-                  #q025=quantile(x$mu, .025), q975=quantile(x$mu, .975))),
-                  #q025=sum(x$mu025), q975=sum(x$mu975))),
+                                          Predicted=sum(x$mu)/nrow(x))),
                   id.vars="Year")
         x$Data <- as.factor(!(x$variable %in% "Observed"))
         levels(x$Data) <- c("Observed", predname)

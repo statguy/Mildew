@@ -314,7 +314,8 @@ OccupancyMildew <- setRefClass(
       
       coords.scale <<- mesh.params$coords.scale
       locations <- cbind(data$Longitude, data$Latitude) / coords.scale
-      mesh <<- inla.mesh.create.helper(points.domain=locations, min.angle=mesh.params$min.angle, max.edge=mesh.params$max.edge / coords.scale, cutoff=mesh.params$cutoff / coords.scale)
+      #mesh <<- inla.mesh.create.helper(points.domain=locations, min.angle=mesh.params$min.angle, max.edge=mesh.params$max.edge / coords.scale, cutoff=mesh.params$cutoff / coords.scale)
+      mesh <<- inla.mesh.2d(loc.domain=locations, min.angle=mesh.params$min.angle, max.edge=mesh.params$max.edge / coords.scale, cutoff=mesh.params$cutoff / coords.scale)
       spde <<- inla.spde2.matern(mesh) 
       
       if (plot) {
