@@ -447,7 +447,7 @@ OccupancyMildew <- setRefClass(
     estimateMu = function() {
       library(plyr)
       library(INLA)
-      message("Estimating mu...")
+      #message("Estimating mu...")
       
       if (is.null(data.stack) | inherits(data.stack, "uninitializedField")) {
         #data$mu <<- laply(result$marginals.linear.predictor, function(x) inla.emarginal(function(x) exp(x)/(1+exp(x)), x), .progress="text")
