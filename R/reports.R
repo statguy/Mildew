@@ -288,13 +288,24 @@ MildewResults = setRefClass(
       return(invisible(.self))
     },
     
-    plotPosteriorRange = function(logscale=T, size=24, save=F) {
-      getPosteriorRange <- function(mildew, title) {
-        spde.result <- inla.spde2.result(mildew$result, "s", mildew$spde)  
-        range.t <- inla.tmarginal(function(x) x * mildew$coords.scale / 1000, spde.result$marginals.range.nominal$range.nominal.1)
-        return(cbind(Response=title, as.data.frame(unclass(range.t))))
-      }
+    getPosteriorRange = function(mildew, title) {
+      library(INLA)
+      spde.result <- inla.spde2.result(mildew$result, "s", mildew$spde)  
+      range.t <- inla.tmarginal(function(x) x * mildew$coords.scale / 1000, spde.result$marginals.range.nominal$range.nominal.1)
+      return(cbind(Response=title, as.data.frame(unclass(range.t))))
+    },
+    
+    savePosteriorRange = function() {
+      postrange <- rbind(getPosteriorRange(results[["ST"]]$occ, "Occupancy"),
+                         getPosteriorRange(results[["ST"]]$col, "Colonization"),
+                         getPosteriorRange(results[["ST"]]$ext, "Extinction"))
+      postrange$log10 <- log10(postrange$x)
+      write.csv(file=file.path(basePath, "postrange.csv"), postrange)
       
+      return(invisible(.self))
+    },
+    
+    plotPosteriorRange = function(logscale=T, size=24, save=F) {
       library(ggplot2)
       
       postrange <- rbind(getPosteriorRange(results[["ST"]]$occ, "Occupancy"),
