@@ -288,7 +288,7 @@ MildewResults = setRefClass(
       return(invisible(.self))
     },
     
-    plotPosteriorRange <- function(logscale=T, size=24, save=F) {
+    plotPosteriorRange = function(logscale=T, size=24, save=F) {
       getPosteriorRange <- function(mildew, title) {
         spde.result <- inla.spde2.result(mildew$result, "s", mildew$spde)  
         range.t <- inla.tmarginal(function(x) x * mildew$coords.scale / 1000, spde.result$marginals.range.nominal$range.nominal.1)
