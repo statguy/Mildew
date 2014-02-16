@@ -297,9 +297,9 @@ MildewResults = setRefClass(
       
       library(ggplot2)
       
-      postrange <- rbind(getRange(results[["ST"]]$occ, "Occupancy"),
-                         getRange(results[["ST"]]$col, "Colonization"),
-                         getRange(results[["ST"]]$ext, "Extinction"))
+      postrange <- rbind(getPosteriorRange(results[["ST"]]$occ, "Occupancy"),
+                         getPosteriorRange(results[["ST"]]$col, "Colonization"),
+                         getPosteriorRange(results[["ST"]]$ext, "Extinction"))
       
       p <- ggplot(postrange, aes(x, y, group=Response, colour=Response)) + geom_line(size=1) +
         scale_y_continuous("Posterior marginal density") +
