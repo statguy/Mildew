@@ -148,7 +148,7 @@ MildewResults = setRefClass(
       ggsave(p, filename=fileName, width=8, height=4)
     },
     
-    plotYearEstimates = function(size=18, save=F) {
+    plotYearEstimates = function(size=12, save=F) {
       library(plyr)
       library(ggplot2)
       library(grid)
@@ -281,6 +281,6 @@ MildewResults = setRefClass(
       .plotInternal(st$occ, "Occupancy")
       .plotInternal(st$col, "Colonization")
       .plotInternal(st$ext, "Extinction")
-    }    
+    }
   )
 )

@@ -380,7 +380,8 @@ OccupancyMildew <- setRefClass(
         data.full$random <- result$summary.random$"data$ID"$mean
         data <<- merge(data, data.full)
         
-        data$mu <<- invlogit(result$summary.linear.predictor$mean)
+        #data$mu <<- invlogit(result$summary.linear.predictor$mean)
+        data$mu <<- result$summary.fitted.values$mean
       }
       else {
         data.stack <<- if (is.null(covariates)) {
@@ -409,7 +410,8 @@ OccupancyMildew <- setRefClass(
         }
         
         index.pred <- inla.stack.index(data.stack, "pred")$data
-        data$mu <<- invlogit(result$summary.linear.predictor$mean[index.pred])
+        #data$mu <<- invlogit(result$summary.linear.predictor$mean[index.pred])
+        data$mu <<- result$summary.fitted.values$mean[index.pred]
       }
 
       # TODO
@@ -448,11 +450,13 @@ OccupancyMildew <- setRefClass(
       message("Estimating mu...")
       
       if (is.null(data.stack) | inherits(data.stack, "uninitializedField")) {
-        data$mu <<- laply(result$marginals.linear.predictor, function(x) inla.emarginal(function(x) exp(x)/(1+exp(x)), x), .progress="text")
+        #data$mu <<- laply(result$marginals.linear.predictor, function(x) inla.emarginal(function(x) exp(x)/(1+exp(x)), x), .progress="text")
+        data$mu <<- result$summary.fitted.values$mean
       }
       else {
         index.pred <- inla.stack.index(data.stack, "pred")$data
-        data$mu <<- laply(result$marginals.linear.predictor[index.pred], function(x) inla.emarginal(function(x) exp(x)/(1+exp(x)), x), .progress="text")
+        #data$mu <<- laply(result$marginals.linear.predictor[index.pred], function(x) inla.emarginal(function(x) exp(x)/(1+exp(x)), x), .progress="text")
+        data$mu <<- result$summary.fitted.values$mean[index.pred]
       }
       invisible(.self)
     },
