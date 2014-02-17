@@ -70,7 +70,8 @@ OccupancyMildew <- setRefClass(
     getMissingDataValuesProportion = function(exclude.imputation.columns) {
       loadRawData()
       imputation.columns <- !(colnames(data) %in% exclude.imputation.columns)
-      x <- sum(is.na(data[,imputation.columns])) / length(data[,imputation.columns])
+      nas <- is.na(data[,imputation.columns])
+      x <- sum(nas) / length(nas)
       message("Rows with missing data in covariates = ", round(x * 100), "%")      
     },
     
