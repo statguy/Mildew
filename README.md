@@ -71,7 +71,7 @@ You may want to consider [forking](https://help.github.com/articles/fork-a-repo)
 
 TODO
 ----
-* Plotting
+* Derive colonizations and extinctions from occupancies
 
 Feedback
 --------

@@ -60,11 +60,18 @@ OccupancyMildew <- setRefClass(
       invisible(.self)
     },
     
-    getMissingDataProportion = function(exclude.imputation.columns) {
+    getMissingDataRowProportion = function(exclude.imputation.columns) {
       loadRawData()
       imputation.columns <- !(colnames(data) %in% exclude.imputation.columns)
       x <- complete.cases(data[,imputation.columns])
       message("Rows with missing data in covariates = ", round((1 - sum(x) / length(x)) * 100), "%")
+    },
+
+    getMissingDataValuesProportion = function(exclude.imputation.columns) {
+      loadRawData()
+      imputation.columns <- !(colnames(data) %in% exclude.imputation.columns)
+      x <- sum(is.na(data[,imputation.columns])) / length(data[,imputation.columns])
+      message("Rows with missing data in covariates = ", round(x * 100), "%")      
     },
     
     # Imputation by k-nearest neighbors regression using Gower's distance that allows inclusion
