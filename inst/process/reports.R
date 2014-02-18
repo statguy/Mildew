@@ -10,5 +10,10 @@ mildewResults$plotObservedPredicted(save=T)
 mildewResults$plotFixedRandom(save=T)
 mildewResults$plotPosteriorRange(save=T)
 
+mildewResults <- MildewResults$new(basePath=basePath)$addResult(type="spatiotemporal", shortName="ST")$selectResults("ST")
+mildewResults$occ$saveDataCSV("occupancies.csv")
+mildewResults$col$saveDataCSV("colonizations.csv")
+mildewResults$ext$saveDataCSV("extinctions.csv")
+
 exclude.imputation.columns <- c("ID","rownames","Commune","PA","Col","Ext","logfallPLM2","Distance_to_shore","S","Smildew","Smildew_pers","y")
-MildewResults$new(basePath=basePath)$addResult(type="spatiotemporal", shortName="ST")$results[["ST"]]$occ$getMissingDataValuesProportion(exclude.imputation.columns)
+mildewResults$occ$getMissingDataValuesProportion(exclude.imputation.columns)

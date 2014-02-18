@@ -583,7 +583,7 @@ OccupancyMildew <- setRefClass(
     },
     
     saveDataCSV = function(fileName) {
-      write.csv(data, file=fileName)
+      write.csv(data, file=file.path(basePath, fileName))
     }
   )
 )
