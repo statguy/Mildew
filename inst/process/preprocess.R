@@ -47,7 +47,7 @@ task3 <- function() {
   return(invisible(ext))
 }
 
-cnpClusterEvalRemote(library(Mildew))
-cnpClusterExportRemote(c("exclude.distance.columns", "exclude.imputation.columns", "basePath", "runParallel"))
+cnpClusterEval(library(Mildew))
+cnpClusterExport(c("exclude.distance.columns", "exclude.imputation.columns", "basePath", "runParallel"))
 x <- cnpClusterApplyIndependent(task1, task2, task3)
 cnpClusterStopRemote()
