@@ -293,7 +293,7 @@ OccupancyMildew <- setRefClass(
         model <<- as.formula(paste(c("y ~ -1 + intercept", paste(fixed.effects, collapse=" + "), random.effects), collapse=" + "))
         #data$intercept <- 1
         #covariates <<- as.data.frame(model.matrix(model, data=data[,!names(data) %in% c("y","PA","Col","Ext","persistent","logfallPLM2")], na.action=na.fail))
-        covariates <<- as.data.frame(model.matrix(~-1+., data=data[,!names(data) %in% c("y","PA","Col","Ext","persistent","logfallPLM2")], na.action=na.fail))
+        covariates <<- as.data.frame(model.matrix(~-1+., data=data[,!names(data) %in% c("y","PA","Col","Ext","persistent","logfallPLM2","residual","mu","random")], na.action=na.fail))
 
         if (nrow(covariates) != nrow(data))
           stop("Missing data (NAs) not allowed in covariates.")
@@ -628,7 +628,15 @@ ColonizationMildew <- setRefClass(
         df <- rbind(df, x)
       }
       
+      df$PA <- NULL
       df$full <- NULL
+      df$S <- NULL
+      df$persistent <- NULL
+      df$Smildew <- NULL
+      df$Smildew_pers <- NULL
+      df$random <- NULL
+      df$mu <- NULL
+      df$residual <- NULL
       
       return(df)
     },
