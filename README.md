@@ -69,10 +69,6 @@ See more info about the references classes with the R command
 ```
 You may want to consider [forking](https://help.github.com/articles/fork-a-repo) the repository for your own use first.
 
-TODO
-----
-* Derive colonizations and extinctions from occupancies
-
 Feedback
 --------
 Send any feedback to [`jvj@iki.fi`](mailto:jvj@iki.fi).
