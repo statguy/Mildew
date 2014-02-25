@@ -90,9 +90,9 @@ ModelResults <- setRefClass(
       if (missing(basePath) | missing(type) | missing(shortName))
         stop("Missing argument.")
       shortName <<- shortName
-      occ <<- OccupancyMildew$new(basePath=basePath)$loadResult(type, tag)
-      col <<- ColonizationMildew$new(basePath=basePath)$loadResult(type, tag)
-      ext <<- ExtinctionMildew$new(basePath=basePath)$loadResult(type, tag)
+      occ <<- OccupancyMildew$new(basePath=basePath)$loadResult(type, tag) #$removeUndefined()
+      col <<- ColonizationMildew$new(basePath=basePath)$loadResult(type, tag)$loadUndefined()
+      ext <<- ExtinctionMildew$new(basePath=basePath)$loadResult(type, tag)$loadUndefined()
     }
   )
 )

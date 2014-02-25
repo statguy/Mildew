@@ -1,7 +1,4 @@
 library(INLA)
-setOldClass("inla.mesh")
-setOldClass("inla.spde2")
-setOldClass("inla.data.stack")
 setOldClass("inla")
 
 OccupancyMildew <- setRefClass(
@@ -15,11 +12,6 @@ OccupancyMildew <- setRefClass(
     type = "character",
     tag = "character",
     coords.scale = "numeric",
-    #mesh = "inla.mesh",
-    #spde = "inla.spde2",
-    #index = "list",
-    #A = "Matrix",
-    #group.years = "integer",
     mesh = "ANY",
     spde = "ANY",
     index = "ANY",
@@ -28,7 +20,6 @@ OccupancyMildew <- setRefClass(
     
     covariates = "ANY",
     model = "formula",
-    #data.stack = "inla.data.stack",
     data.stack = "ANY",
     result = "inla"
   ),
@@ -136,7 +127,7 @@ OccupancyMildew <- setRefClass(
       
       invisible(.self)
     },
-        
+    
     getDataFileName = function() {
       return(file.path(basePath, paste("MildewData-", response, ".RData", sep="")))
     },
@@ -455,15 +446,12 @@ OccupancyMildew <- setRefClass(
     estimateMu = function() {
       library(plyr)
       library(INLA)
-      #message("Estimating mu...")
       
       if (is.null(data.stack) | inherits(data.stack, "uninitializedField")) {
-        #data$mu <<- laply(result$marginals.linear.predictor, function(x) inla.emarginal(function(x) exp(x)/(1+exp(x)), x), .progress="text")
         data$mu <<- result$summary.fitted.values$mean
       }
       else {
         index.pred <- inla.stack.index(data.stack, "pred")$data
-        #data$mu <<- laply(result$marginals.linear.predictor[index.pred], function(x) inla.emarginal(function(x) exp(x)/(1+exp(x)), x), .progress="text")
         data$mu <<- result$summary.fitted.values$mean[index.pred]
       }
       invisible(.self)
@@ -584,6 +572,13 @@ OccupancyMildew <- setRefClass(
     
     saveDataCSV = function(fileName) {
       write.csv(data, file=file.path(basePath, fileName))
+    },
+    
+    plotYears = function() {
+      library(plyr)
+      library(ggplot2)
+      x <- ddply(data, .(Year), function(x) data.frame(Total=sum(x$y, na.rm=T), All=nrow(x)))
+      ggplot(x, aes(Year, Total)) + geom_line()
     }
   )
 )
@@ -594,52 +589,77 @@ ColonizationMildew <- setRefClass(
   fields = list(
   ),
   methods = list(
-    initialize = function(...) {
-      callSuper(response="colonization", ...)
+    initialize = function(response="colonization", ...) {
+      callSuper(response=response, ...)
       invisible(.self)
     },
     
-    loadRawData = function(mildewFile="SO_col_univariate_2001_2012.csv") {
-      message("Loading ", response, " data...")
+    deriveColonizationsExtinctions = function() {
+      occ <- OccupancyMildew$new(basePath=basePath)$loadResult("spatiotemporal", "")
       
-      mildew <- read.csv(file.path(basePath, mildewFile))
-      mildew <- transform(mildew, y=as.logical(Col), road_PA=as.logical(road_PA), Open_bin=as.logical(Open_bin), varjoisuus=as.ordered(varjoisuus),
-                          fallPLM2=fallPLM2, Distance_to_shore=Distance_to_shore, fallPLdry=fallPLdry,
-                          logfallPLM2=log(fallPLM2), logDistance_to_shore=log(Distance_to_shore), S=S)
-      mildew <- mergeRainfall(mildew)
-      mildew$fallPLdry[mildew$fallPLdry > 100] <- NA
-      mildew$varjoisuus[mildew$varjoisuus == 0] <- NA
+      na.index <- is.na(occ$data$y)
+      occ$data$full <- occ$data$y
+      occ$data$full[na.index] <- round(occ$data$mu)[na.index]
       
-      data <<- mildew
-      invisible(.self)
+      years <- sort(unique(occ$data$Year))
+      df <- data.frame()
+      
+      for (year in years[-1]) {
+        previous <- subset(occ$data, Year==year-1)$full
+        x <- subset(occ$data, Year==year)
+        current <- x$full
+        x$Col <- NA
+        x$Ext <- NA
+        
+        indexUndefined <- ((previous == 1) & (current == 1)) | (previous == 1 & current == 0)
+        indexZero <- (previous == 0) & (current == 0)
+        indexOne <- (previous == 0 & current == 1)
+        x$Col[indexUndefined] <- NaN
+        x$Col[indexZero] <- 0
+        x$Col[indexOne] <- 1
+        
+        indexUndefined <- ((previous == 0) & (current == 0)) | (previous == 0 & current == 1)
+        indexZero <- ((previous == 1) & (current == 1))
+        indexOne <- (previous == 1 & current == 0)
+        x$Ext[indexUndefined] <- NaN
+        x$Ext[indexZero] <- 0
+        x$Ext[indexOne] <- 1
+        
+        df <- rbind(df, x)
+      }
+      
+      df$full <- NULL
+      
+      return(df)
+    },
+    
+    loadRawData = function() {
+      df <- deriveColonizationsExtinctions()
+      df$Ext <- NULL
+      df$y <- df$Col
+      df <- df[!is.na(df$y),]
+      data <<- df
     }
   )
 )
 
 ExtinctionMildew <- setRefClass(
   "ExtinctionMildew",
-  contains = "OccupancyMildew",
+  contains = "ColonizationMildew",
   fields = list(
   ),
   methods = list(
-    initialize = function(...) {
-      callSuper(response="extinction", ...)
+    initialize = function(response="extinction", ...) {
+      callSuper(response=response, ...)
       invisible(.self)
     },
     
-    loadRawData = function(mildewFile="SO_ext_univariate_2001_2012.csv") {
-      message("Loading ", response, " data...")
-      
-      mildew <- read.csv(file.path(basePath, mildewFile))
-      mildew <- transform(mildew, y=as.logical(Ext), road_PA=as.logical(road_PA), Open_bin=as.logical(Open_bin), varjoisuus=as.ordered(varjoisuus),
-                          fallPLM2=fallPLM2, Distance_to_shore=Distance_to_shore, fallPLdry=fallPLdry,
-                          logfallPLM2=log(fallPLM2), logDistance_to_shore=log(Distance_to_shore), S=S)
-      mildew <- mergeRainfall(mildew)
-      mildew$fallPLdry[mildew$fallPLdry > 100] <- NA
-      mildew$varjoisuus[mildew$varjoisuus == 0] <- NA
-            
-      data <<- mildew
-      invisible(.self)
+    loadRawData = function() {
+      df <- deriveColonizationsExtinctions()
+      df$Col <- NULL
+      df$y <- df$Ext
+      df <- df[!is.na(df$y),]
+      data <<- df
     }
   )
 )
