@@ -639,6 +639,7 @@ ColonizationMildew <- setRefClass(
       df$y <- df$Col
       df <- df[!is.na(df$y),]
       data <<- df
+      return(invisible(.self))
     }
   )
 )
@@ -660,6 +661,7 @@ ExtinctionMildew <- setRefClass(
       df$y <- df$Ext
       df <- df[!is.na(df$y),]
       data <<- df
+      return(invisible(.self))
     }
   )
 )

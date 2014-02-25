@@ -4,7 +4,7 @@ library(Mildew)
 if (!exists("basePath") | !exists("runParallel"))
   stop("Please set basePath and runParallel parameters.")
 
-cnpClusterStartRemote(runParallel=runParallel, hosts=cnpClusterGetHostsUkko(maxNodes=3))
+#cnpClusterStartRemote(runParallel=runParallel, hosts=cnpClusterGetHostsUkko(maxNodes=3))
 
 exclude.distance.columns <- c("ID","rownames","Commune","PA","Col","Ext","logfallPLM2","Distance_to_shore","S","Smildew","Smildew_pers")
 exclude.imputation.columns <- c(exclude.distance.columns,"y")
