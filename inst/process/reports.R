@@ -9,6 +9,7 @@ mildewResults$plotYearEstimates(save=T)
 mildewResults$plotObservedPredicted(save=T)
 mildewResults$plotFixedRandom(save=T)
 mildewResults$plotPosteriorRange(save=T)
+mildewResults$savePosteriorRange()
 
 mildewResultsST <- MildewResults$new(basePath=basePath)$addResult(type="spatiotemporal", shortName="ST")$selectResults("ST")
 mildewResultsST$occ$saveDataCSV("occupancies.csv")

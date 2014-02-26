@@ -9,7 +9,7 @@ col <- ColonizationMildew$new(basePath=basePath, runParallel=runParallel)$loadDa
 ext <- ExtinctionMildew$new(basePath=basePath, runParallel=runParallel)$loadData()
 occ.mesh.params <- list(min.angle=20, max.edge=c(3400,10000), cutoff=1000, coords.scale=1e6)
 col.mesh.params <- list(min.angle=20, max.edge=c(3400,10000), cutoff=1200, coords.scale=1e6)
-ext.mesh.params <- list(min.angle=20, max.edge=c(2800,10000), cutoff=1000, coords.scale=1e6)
+ext.mesh.params <- list(min.angle=20, max.edge=c(2700,10000), cutoff=1000, coords.scale=1e6)
 occ.connectivity.scale <- 2000
 col.connectivity.scale <- 2000
 ext.connectivity.scale <- 500
