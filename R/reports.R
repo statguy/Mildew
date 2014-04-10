@@ -1,5 +1,5 @@
 theme_raster <- function(base_size=12) {
-  require(grid)
+  library(grid)
   theme(
     panel.background=element_blank(),
     panel.border=element_rect(colour="grey", fill=NA),
