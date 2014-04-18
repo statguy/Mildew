@@ -249,23 +249,24 @@ OccupancyMildew <- setRefClass(
       return(newid)
     },
     
-    scaleCovariates = function() {
+    scaleCovariates = function(x=covariates) {
       library(arm)
       
       message("Scaling covariates...")
       
-      covariates$fallPLM2 <<- rescale(covariates$fallPLM2)
-      covariates$road_PA <<- rescale(covariates$road_PA)
-      covariates$Distance_to_shore <<- rescale(covariates$Distance_to_shore)
-      covariates$Open_bin <<- rescale(covariates$Open_bin)    
-      if (any(names(covariates) == "S")) covariates$S <<- rescale(covariates$S)
-      if (any(names(covariates) == "Smildew")) covariates$Smildew <<- rescale(covariates$Smildew)
-      if (any(names(covariates) == "Smildew_pers")) covariates$Smildew_pers <<- rescale(covariates$Smildew_pers)
-      covariates$fallPLdy <<- rescale(covariates$fallPLdry)
-      #covariates$varjoisuus <<- rescale(covariates$varjoisuus)
-      covariates$Rainfall_August <<- rescale(covariates$Rainfall_August)
-      covariates$Rainfall_July <<- rescale(covariates$Rainfall_July)
-      covariates$logDistance_to_shore <<- rescale(covariates$logDistance_to_shore)
+      x$fallPLM2 <<- rescale(covariates$fallPLM2)
+      x$road_PA <<- rescale(x$road_PA)
+      x$Distance_to_shore <<- rescale(x$Distance_to_shore)
+      x$Open_bin <<- rescale(x$Open_bin)    
+      if (any(names(x) == "S")) x$S <<- rescale(x$S)
+      if (any(names(x) == "Smildew")) x$Smildew <<- rescale(x$Smildew)
+      if (any(names(x) == "Smildew_pers")) x$Smildew_pers <<- rescale(x$Smildew_pers)
+      x$fallPLdy <<- rescale(x$fallPLdry)
+      #x$varjoisuus <<- rescale(x$varjoisuus)
+      x$Rainfall_August <<- rescale(x$Rainfall_August)
+      x$Rainfall_July <<- rescale(x$Rainfall_July)
+      x$logDistance_to_shore <<- rescale(x$logDistance_to_shore)
+      return(x)
     },
     
     setupModel = function(type, scale.covariates=TRUE, fixed.effects, mesh.params, plot=FALSE) {
@@ -298,7 +299,7 @@ OccupancyMildew <- setRefClass(
         if (nrow(covariates) != nrow(data))
           stop("Missing data (NAs) not allowed in covariates.")
         
-        if (scale.covariates) scaleCovariates()
+        if (scale.covariates) covariates <<- scaleCovariates(covariates)
       }
       
       years <- data$Year
@@ -571,8 +572,9 @@ OccupancyMildew <- setRefClass(
     },
     
     saveDataCSV = function(fileName, rescale=F) {
-      if (rescale) scaleCovariates()
-      write.csv(data, file=file.path(basePath, fileName))
+      x <- if (rescale) scaleCovariates(data)
+      else data
+      write.csv(x, file=file.path(basePath, fileName))
     },
     
     plotYears = function() {
