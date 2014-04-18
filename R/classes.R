@@ -570,7 +570,8 @@ OccupancyMildew <- setRefClass(
       invisible(.self)
     },
     
-    saveDataCSV = function(fileName) {
+    saveDataCSV = function(fileName, rescale=F) {
+      if (rescale) scaleCovariates()
       write.csv(data, file=file.path(basePath, fileName))
     },
     
