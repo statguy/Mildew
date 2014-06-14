@@ -7,7 +7,7 @@ This is the supplementary R code for the paper
 Ecological and evolutionary effects of fragmentation on infectious disease dynamics. Science 344 (6189): 1289-1293**]
 (http://www.sciencemag.org/content/344/6189/1289.abstract).
 
-to preprocess data, estimate spatio-temporal models for each response and plot results.
+to preprocess the data, estimate the spatio-temporal models for each response and plot the results.
 
 Setup
 -----
