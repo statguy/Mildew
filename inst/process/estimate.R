@@ -1,8 +1,7 @@
-library(CNPCluster)
 library(Mildew)
 
-if (!exists("basePath") | !exists("runParallel"))
-  stop("Please set basePath and runParallel parameters.")
+if (!exists("basePath"))
+  stop("Please set basePath parameter.")
 
 occ <- OccupancyMildew$new(basePath=basePath, runParallel=runParallel)$loadData()
 col <- ColonizationMildew$new(basePath=basePath, runParallel=runParallel)$loadData()
@@ -60,17 +59,29 @@ task61 <- function() estimateRandomEffectModel(occ, connectivity.scale=occ.conne
 task62 <- function() estimateRandomEffectModel(col, connectivity.scale=col.connectivity.scale, fixed.effects=col.fixed.effects, mesh.params=col.mesh.params, type="spatiotemporal")
 task63 <- function() estimateRandomEffectModel(ext, connectivity.scale=ext.connectivity.scale, fixed.effects=ext.fixed.effects, mesh.params=ext.mesh.params, type="spatiotemporal")
 
-cnpClusterStartRemote(runParallel=runParallel, hosts=cnpClusterGetHostsUkko(maxNodes=6*3), outFile=file.path(basePath, "estimate.log"))
-cnpClusterEval({ library(Mildew); library(INLA) })
-cnpClusterExport(c("occ", "col", "ext",
-                   "occ.mesh.params", "col.mesh.params", "ext.mesh.params",
-                   "occ.connectivity.scale", "col.connectivity.scale", "ext.connectivity.scale",
-                   "occ.fixed.effects", "col.fixed.effects", "ext.fixed.effects",
-                   "estimateOrdinaryLogisticModel", "estimateInterceptOnlyRandomEffectModel", "estimateRandomEffectModel"))
-x <- cnpClusterApplyIndependent(task11, task12, task13,
-                                task21, task22, task23,
-                                task31, task32, task33,
-                                task41, task42, task43,
-                                task51, task52, task53,
-                                task61, task62, task63)
-cnpClusterStopRemote()
+
+args <- commandArgs(trailingOnly=TRUE)
+if (length(args) != 2) stop("Invalid arguments.")
+test <- args[1]
+task_id <- args[length(args)]
+message("Arguments provided:")
+print(args)
+
+if (task_id == 11) task11()
+else if (task_id == 12) task12()
+else if (task_id == 12) task13()
+else if (task_id == 21) task21()
+else if (task_id == 22) task22()
+else if (task_id == 23) task23()
+else if (task_id == 31) task31()
+else if (task_id == 32) task32()
+else if (task_id == 33) task33()
+else if (task_id == 41) task41()
+else if (task_id == 42) task42()
+else if (task_id == 43) task43()
+else if (task_id == 51) task51()
+else if (task_id == 52) task52()
+else if (task_id == 53) task53()
+else if (task_id == 61) task61()
+else if (task_id == 62) task62()
+else if (task_id == 63) task63()

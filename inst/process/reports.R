@@ -1,7 +1,7 @@
 library(Mildew)
 
-if (!exists("basePath") | !exists("runParallel"))
-  stop("Please set basePath and runParallel parameters.")
+if (!exists("basePath"))
+  stop("Please set basePath parameter.")
 
 mildewResults <- MildewResults$new(basePath=basePath)$addAllResults()
 mildewResults$summary()

@@ -1,10 +1,7 @@
-library(CNPCluster)
 library(Mildew)
 
-if (!exists("basePath") | !exists("runParallel"))
-  stop("Please set basePath and runParallel parameters.")
-
-#cnpClusterStartRemote(runParallel=runParallel, hosts=cnpClusterGetHostsUkko(maxNodes=3))
+if (!exists("basePath"))
+  stop("Please set basePath parameter.")
 
 exclude.distance.columns <- c("ID","rownames","Commune","PA","Col","Ext","logfallPLM2","Distance_to_shore","S","Smildew","Smildew_pers")
 exclude.imputation.columns <- c(exclude.distance.columns,"y")
@@ -37,14 +34,17 @@ task3 <- function() {
   return(invisible(ext))
 }
 
-task1()
+
+
+args <- commandArgs(trailingOnly=TRUE)
+if (length(args) != 2) stop("Invalid arguments.")
+test <- args[1]
+task_id <- args[length(args)]
+message("Arguments provided:")
+print(args)
 
 # Estimate occupancies first as results are needed for colonizations and extinctions
 
-task2()
-task3()
-
-#cnpClusterEval(library(Mildew))
-#cnpClusterExport(c("exclude.distance.columns", "exclude.imputation.columns", "basePath", "runParallel"))
-#x <- cnpClusterApplyIndependent(task1, task2, task3)
-#cnpClusterStopRemote()
+if (task_id == 1) task1()
+else if (task_id == 2) task2()
+else if (task_id == 3) task3()
